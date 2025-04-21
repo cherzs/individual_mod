@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Default Book Genres -->
+        <record id="genre_fiction" model="custom.book.genre">
+            <field name="name">Fiction</field>
+            <field name="description">Fiction is the telling of stories which are not real.</field>
+        </record>
+        
+        <record id="genre_nonfiction" model="custom.book.genre">
+            <field name="name">Non-Fiction</field>
+            <field name="description">Non-fiction is writing that gives information or describes real events.</field>
+        </record>
+        
+        <record id="genre_scifi" model="custom.book.genre">
+            <field name="name">Science Fiction</field>
+            <field name="description">Science fiction is a genre of fiction dealing with imaginary but more or less plausible content.</field>
+        </record>
+        
+        <record id="genre_mystery" model="custom.book.genre">
+            <field name="name">Mystery</field>
+            <field name="description">Mystery fiction is a genre of fiction that focuses on the investigation of a crime.</field>
+        </record>
+        
+        <record id="genre_biography" model="custom.book.genre">
+            <field name="name">Biography</field>
+            <field name="description">A biography is a detailed description of a person's life.</field>
+        </record>
+    </data>
+</odoo>
