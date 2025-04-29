@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- App Menu -->
+    <menuitem id="menu_library_root"
+        name="Library"
+        web_icon="base,static/description/icon.png"
+        sequence="10"/>
+        
+    <!-- Book Menu -->
+    <menuitem id="menu_library_books"
+        name="Books"
+        parent="menu_library_root"
+        sequence="10"/>
+        
+    <menuitem id="menu_library_books_list"
+        name="Books"
+        parent="menu_library_books"
+        action="action_books"
+        sequence="10"/>
+        
+    <menuitem id="menu_library_genres"
+        name="Genres"
+        parent="menu_library_books"
+        action="action_book_genres"
+        sequence="20"/>
+        
+    <!-- Author Menu -->
+    <menuitem id="menu_library_authors"
+        name="Authors"
+        parent="menu_library_root"
+        action="action_authors"
+        sequence="20"/>
+        
+    <!-- Dashboard Menu -->
+    <menuitem id="menu_library_dashboard"
+        name="Dashboard"
+        parent="menu_library_root"
+        action="action_library_dashboard"
+        sequence="5"/>
+</odoo>

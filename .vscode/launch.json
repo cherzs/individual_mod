@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Odoo Debug",
+            "type": "debugpy",
+            "console": "integratedTerminal",
+            "python": "/home/ghaly/odoo/venv/bin/python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "program": "/opt/odoo/odoo/odoo-bin",
+            "args": [
+                "--config=/home/ghaly/odoo_cap.conf",  
+                "--dev=all",
+                // "-d", "CapPassion17",
+                // "-u", "vdl_next_statistics",
+                // "-u", "vdl_catalog",
+                // "-u", "vdl_stastitic_report",
+            ],
+            "justMyCode": false
+            
+        }
+    ]
+}
