@@ -1,1 +1,28 @@
+# Bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Odoo specific
 .qodo
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Local environment files
+.env
+.venv
+env/
+venv/
+ENV/
