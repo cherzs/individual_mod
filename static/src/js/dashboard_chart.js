@@ -14,6 +14,7 @@ class LibraryDashboardController {
         this.chartInstances = {};
         this.error = null;
         this.initialized = false;
+        this._refreshing = false;
     }
     
     async init() {
@@ -22,6 +23,9 @@ class LibraryDashboardController {
             
             // Load Chart.js if not already loaded
             await waitForChartJs();
+            
+            // Force full width on all parent containers
+            this.forceFullWidth();
             
             // Inject chart template and initialize
             this.injectChartTemplate();
@@ -34,6 +38,94 @@ class LibraryDashboardController {
         }
     }
     
+    // Force full width on all parent containers
+    forceFullWidth() {
+        console.log("Forcing full width on dashboard containers");
+        
+        // List of selectors to apply full width to
+        const fullWidthSelectors = [
+            '.o_form_view',
+            '.o_form_sheet',
+            '.o_form_sheet_bg',
+            '.oe_chart',
+            '.o_notebook',
+            '.tab-content',
+            '.tab-pane'
+        ];
+        
+        // Apply fullwidth to all selectors
+        fullWidthSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.width = '100%';
+                el.style.maxWidth = '100%';
+                el.style.margin = '0';
+                el.style.boxSizing = 'border-box';
+                
+                // Add our custom class
+                el.classList.add('dashboard-full-width');
+            });
+        });
+        
+        // Apply special style to form view directly
+        const formView = document.querySelector('.o_form_view');
+        if (formView) {
+            formView.style.maxWidth = 'none';
+        }
+        
+        // Check if we need to add our own style tag
+        if (!document.getElementById('dashboard-fullwidth-style')) {
+            const style = document.createElement('style');
+            style.id = 'dashboard-fullwidth-style';
+            style.innerHTML = `
+                .o_form_view .o_form_sheet_bg,
+                .o_form_view .o_form_sheet,
+                .o_notebook, .tab-content, .tab-pane,
+                .oe_chart, .o_dashboard_charts,
+                .o_dashboard_chart, .charts_container,
+                .chart_row {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    margin: 0 !important;
+                    box-sizing: border-box !important;
+                }
+                
+                .o_form_view.o_form_readonly {
+                    max-width: none !important;
+                }
+                
+                .chart_section {
+                    flex: 1 !important;
+                    min-width: 300px !important;
+                    max-width: calc(50% - 10px) !important;
+                    width: calc(50% - 10px) !important;
+                    margin-bottom: 15px !important;
+                }
+                
+                .chart_row {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                    justify-content: space-between !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+                
+                .charts_container {
+                    width: 100% !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+                
+                @media (max-width: 768px) {
+                    .chart_section {
+                        max-width: 100% !important;
+                        width: 100% !important;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
     injectChartTemplate() {
         const dashboardContainer = document.querySelector('.o_dashboard_charts');
         if (!dashboardContainer) {
@@ -41,48 +133,87 @@ class LibraryDashboardController {
             return;
         }
         
+        // Add class to parent container to ensure full width
+        const chartParent = dashboardContainer.closest('.oe_chart');
+        if (chartParent) {
+            chartParent.classList.add('full-width-chart');
+            chartParent.style.width = '100%';
+            chartParent.style.maxWidth = '100%';
+            chartParent.style.padding = '0';
+            chartParent.style.margin = '0';
+        }
+        
+        // Try to find the form sheet and add full width class
+        const formSheet = dashboardContainer.closest('.o_form_sheet');
+        if (formSheet) {
+            formSheet.classList.add('dashboard-full-width');
+            formSheet.style.width = '100%';
+            formSheet.style.maxWidth = '100%';
+            formSheet.style.padding = '16px';
+            formSheet.style.boxSizing = 'border-box';
+        }
+        
+        // Also check for form sheet background
+        const formSheetBg = dashboardContainer.closest('.o_form_sheet_bg');
+        if (formSheetBg) {
+            formSheetBg.classList.add('dashboard-full-width');
+            formSheetBg.style.width = '100%';
+            formSheetBg.style.maxWidth = '100%';
+        }
+        
+        // Set dashboard container styles directly
+        dashboardContainer.style.width = '100%';
+        dashboardContainer.style.maxWidth = '100%';
+        dashboardContainer.style.padding = '15px';
+        dashboardContainer.style.boxSizing = 'border-box';
+        
         // Insert the chart HTML
         dashboardContainer.innerHTML = `
-            <div class="o_dashboard_chart">
-                <div class="charts_container">
-                    <div class="chart_row">
-                        <div class="chart_section">
-                            <h3>Loan Trends</h3>
-                            <canvas id="loanChart"></canvas>
+            <div class="o_dashboard_chart full-width" style="width:100%; max-width:100%;">
+                <div class="chart-actions text-center mt-4">
+                    <button class="btn btn-primary reload_charts_btn" onclick="if(window.reloadDashboard) window.reloadDashboard(); else if(window.refreshAllCharts) window.refreshAllCharts(); return false;">
+                        <i class="fa fa-refresh mr-2"></i>Reload Charts
+                    </button>
+                </div>
+                <div class="charts_container" style="width:100%; display:flex; flex-direction:column;">
+                    <div class="chart_row" style="width:100%; display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-line-chart mr-2"></i>Loan Trends</h3>
+                            <canvas id="loanChart" style="height:250px;"></canvas>
                         </div>
-                        <div class="chart_section">
-                            <h3>Book Categories</h3>
-                            <canvas id="categoryChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart_row">
-                        <div class="chart_section">
-                            <h3>Book Acquisitions</h3>
-                            <canvas id="acquisitionsChart"></canvas>
-                        </div>
-                        <div class="chart_section">
-                            <h3>Loan Status</h3>
-                            <canvas id="loanStatusChart"></canvas>
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-pie-chart mr-2"></i>Book Categories</h3>
+                            <canvas id="categoryChart" style="height:250px;"></canvas>
                         </div>
                     </div>
-                    <div class="chart_row">
-                        <div class="chart_section">
-                            <h3>Member Activities</h3>
-                            <canvas id="memberActivitiesChart"></canvas>
+                    <div class="chart_row" style="width:100%; display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-bar-chart mr-2"></i>Book Acquisitions</h3>
+                            <canvas id="acquisitionsChart" style="height:250px;"></canvas>
                         </div>
-                        <div class="chart_section">
-                            <h3>Book Condition</h3>
-                            <canvas id="bookConditionChart"></canvas>
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-pie-chart mr-2"></i>Loan Status</h3>
+                            <canvas id="loanStatusChart" style="height:250px;"></canvas>
                         </div>
                     </div>
-                    <div class="chart_row">
-                        <div class="chart_section">
-                            <h3>Revenue by Month</h3>
-                            <canvas id="revenueChart"></canvas>
+                    <div class="chart_row" style="width:100%; display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-users mr-2"></i>Member Activities</h3>
+                            <canvas id="memberActivitiesChart" style="height:250px;"></canvas>
                         </div>
-                        <div class="chart_section">
-                            <h3>Popular Reading Times</h3>
-                            <canvas id="readingTimesChart"></canvas>
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-circle-o-notch mr-2"></i>Book Condition</h3>
+                            <canvas id="bookConditionChart" style="height:250px;"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart_row" style="width:100%; display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-money mr-2"></i>Revenue by Month</h3>
+                            <canvas id="revenueChart" style="height:250px;"></canvas>
+                        </div>
+                        <div class="chart_section" style="width:calc(50% - 8px); flex:1;">
+                            <h3><i class="fa fa-clock-o mr-2"></i>Popular Reading Times</h3>
+                            <canvas id="readingTimesChart" style="height:250px;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -212,31 +343,44 @@ class LibraryDashboardController {
     // New method to fetch data from the API endpoint
     fetchDataFromServer() {
         console.log("Fetching dashboard data from server API...");
-        fetch('/library/dashboard/data')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Successfully fetched data from API");
-                this.chartData = data;
-                // Render charts after a small delay
-                setTimeout(() => {
-                    this.renderCharts();
-                }, 300);
-            })
-            .catch(error => {
-                console.error("Error fetching chart data from API:", error);
-                this.error = error.message || "Failed to fetch chart data";
-                
-                // Still attempt to use hardcoded sample data as fallback
-                this.chartData = this.getSampleChartData();
-                setTimeout(() => {
-                    this.renderCharts();
-                }, 300);
-            });
+        
+        return new Promise((resolve, reject) => {
+            // Try to fetch from Odoo controller endpoint
+            fetch('/library/dashboard/data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Successfully fetched data from API");
+                    if (data && data.data) {
+                        this.chartData = data.data;
+                    } else {
+                        console.warn("API response did not contain expected data structure");
+                        this.chartData = this.getSampleChartData();
+                    }
+                    
+                    // Render charts after a small delay
+                    setTimeout(() => {
+                        this.renderCharts();
+                        resolve();
+                    }, 300);
+                })
+                .catch(error => {
+                    console.error("Error fetching chart data from API:", error);
+                    
+                    // Still attempt to use hardcoded sample data as fallback
+                    console.log("Using sample chart data as fallback");
+                    this.chartData = this.getSampleChartData();
+                    
+                    setTimeout(() => {
+                        this.renderCharts();
+                        resolve(); // Still resolve, as we're using fallback data
+                    }, 300);
+                });
+        });
     }
     
     // Extract sample data to a separate method for reuse
@@ -346,61 +490,362 @@ class LibraryDashboardController {
     }
     
     renderCharts() {
-        try {
-            if (!this.chartData || typeof Chart === 'undefined') {
-                console.warn("Chart data or Chart.js not available");
-                return;
-            }
-            
-            const chartData = this.chartData;
-            
-            // Properly destroy any existing charts
-            Object.keys(this.chartInstances).forEach(key => {
-                if (this.chartInstances[key] instanceof Chart) {
-                    this.chartInstances[key].destroy();
-                    console.log(`Destroyed existing chart: ${key}`);
-                }
-                this.chartInstances[key] = null;
+        // Ensure full width is applied
+        this.forceFullWidth();
+        
+        // Check if Chart.js is available
+        if (typeof Chart === 'undefined') {
+            console.error("Chart.js is not available!");
+            document.querySelectorAll('.o_dashboard_charts').forEach(el => {
+                el.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Chart.js library could not be loaded. Please refresh the page.</p>
+                        <button class="btn btn-primary" onclick="location.reload()">Refresh Page</button>
+                    </div>
+                `;
             });
-            
-            // Clear the chart instances object
+            return;
+        }
+        
+        // Log the data for debugging
+        console.log("Rendering charts with data:", this.chartData);
+        
+        // Destroy existing charts to prevent duplicates
+        if (this.chartInstances) {
+            Object.values(this.chartInstances).forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
+            });
             this.chartInstances = {};
-            
-            // Render all charts
-            this.renderLoanTrendsChart(chartData.loan_trend);
-            this.renderCategoriesChart(chartData.book_categories);
-            this.renderAcquisitionsChart(chartData.book_acquisitions);
-            this.renderLoanStatusChart(chartData.loan_status);
-            this.renderMemberActivitiesChart(chartData.member_activities);
-            this.renderBookConditionChart(chartData.book_condition);
-            
-            // Render new charts
-            this.renderRevenueChart(chartData.revenue_data || this.generateRevenueData());
-            this.renderReadingTimesChart(chartData.reading_times || this.generateReadingTimesData());
-            
-            console.log("All charts rendered successfully");
-            
-            // Apply resize listener to ensure charts remain responsive
-            if (!window._chartResizeListener) {
-                window._chartResizeListener = true;
-                window.addEventListener('resize', this.handleResize.bind(this));
+        }
+        
+        // Add a manual button to reload charts
+        const dashboardEl = document.querySelector('.o_dashboard_charts');
+        if (dashboardEl && !document.querySelector('.reload_charts_btn')) {
+            const reloadBtn = document.createElement('button');
+            reloadBtn.className = 'btn btn-secondary reload_charts_btn';
+            reloadBtn.textContent = 'Reload Charts';
+            reloadBtn.style.marginBottom = '15px';
+            reloadBtn.onclick = () => this.refreshAllCharts();
+            dashboardEl.prepend(reloadBtn);
+        }
+        
+        try {
+            // If data is available, render the charts
+            if (this.chartData) {
+                this.renderChartWithFallback('loan_trend', this.renderLoanTrendsChart.bind(this));
+                this.renderChartWithFallback('book_categories', this.renderCategoriesChart.bind(this));
+                this.renderChartWithFallback('book_acquisitions', this.renderAcquisitionsChart.bind(this));
+                this.renderChartWithFallback('loan_status', this.renderLoanStatusChart.bind(this));
+                this.renderChartWithFallback('member_activities', this.renderMemberActivitiesChart.bind(this));
+                this.renderChartWithFallback('book_condition', this.renderBookConditionChart.bind(this));
+                this.renderChartWithFallback('revenue', this.renderRevenueChart.bind(this));
+                this.renderChartWithFallback('reading_times', this.renderReadingTimesChart.bind(this));
+                
+                // Add resize listener for responsive charts
+                if (!this._resizeListenerAdded) {
+                    window.addEventListener('resize', this.handleResize.bind(this));
+                    this._resizeListenerAdded = true;
+                }
+                
+                console.log("All charts rendered successfully");
+            } else {
+                console.error("No chart data available");
+                document.querySelectorAll('.chart_section canvas').forEach(canvas => {
+                    const section = canvas.closest('.chart_section');
+                    if (section) {
+                        section.innerHTML += `
+                            <div class="chart-error mt-3">
+                                <p>No data available for this chart</p>
+                            </div>
+                        `;
+                    }
+                });
             }
         } catch (error) {
             console.error("Error rendering charts:", error);
-            this.error = error.message || "Failed to render charts";
-            
-            // Display error message in the chart container
-            const chartContainers = document.querySelectorAll('.chart_section');
-            chartContainers.forEach(container => {
-                const canvas = container.querySelector('canvas');
-                if (canvas) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'alert alert-danger';
-                    wrapper.textContent = `Error rendering chart: ${error.message}`;
-                    container.appendChild(wrapper);
-                }
+            document.querySelectorAll('.o_dashboard_charts').forEach(el => {
+                el.innerHTML += `
+                    <div class="alert alert-danger">
+                        <p>Error rendering charts: ${error.message}</p>
+                    </div>
+                `;
             });
         }
+    }
+    
+    renderChartWithFallback(chartKey, renderFunction) {
+        try {
+            // Get the data for this chart
+            const data = this.chartData[chartKey];
+            
+            // If data exists, render the chart
+            if (data) {
+                renderFunction(data);
+            } else {
+                // Generate fallback data if real data is not available
+                console.log(`Data for ${chartKey} not found, using sample data`);
+                let sampleData;
+                
+                // Get sample data based on chart type
+                switch (chartKey) {
+                    case 'loan_trend':
+                        sampleData = this.generateLoan_trendData();
+                        break;
+                    case 'book_categories':
+                        sampleData = this.generateBook_categoriesData();
+                        break;
+                    case 'book_acquisitions':
+                        sampleData = this.generateBook_acquisitionsData();
+                        break;
+                    case 'loan_status':
+                        sampleData = this.generateLoan_statusData();
+                        break;
+                    case 'member_activities':
+                        sampleData = this.generateMember_activitiesData();
+                        break;
+                    case 'book_condition':
+                        sampleData = this.generateBook_conditionData();
+                        break;
+                    case 'revenue':
+                        sampleData = this.generateRevenueData();
+                        break;
+                    case 'reading_times':
+                        sampleData = this.generateReadingTimesData();
+                        break;
+                    default:
+                        console.error(`No sample data generator for ${chartKey}`);
+                        return;
+                }
+                
+                // Render with sample data
+                renderFunction(sampleData);
+            }
+        } catch (error) {
+            console.error(`Error rendering ${chartKey} chart:`, error);
+            // Use the displayChartError method to show the error
+            this.displayChartError(chartKey, error);
+        }
+    }
+    
+    getCanvasIdForChart(chartKey) {
+        const mapping = {
+            'loan_trend': 'loanChart',
+            'book_categories': 'categoryChart',
+            'book_acquisitions': 'acquisitionsChart',
+            'loan_status': 'loanStatusChart',
+            'member_activities': 'memberActivitiesChart',
+            'book_condition': 'bookConditionChart',
+            'revenue': 'revenueChart',
+            'reading_times': 'readingTimesChart'
+        };
+        return mapping[chartKey];
+    }
+    
+    /**
+     * Display an error message for a chart
+     * @param {string} chartKey - The key identifying the chart
+     * @param {Error|string} error - The error object or message
+     */
+    displayChartError(chartKey, error) {
+        console.error(`Error rendering ${chartKey} chart:`, error);
+        // Find the canvas for this chart and show error
+        const canvasId = this.getCanvasIdForChart(chartKey);
+        if (canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const section = canvas.closest('.chart_section');
+                if (section) {
+                    // Create error div if it doesn't exist
+                    let errorDiv = section.querySelector('.chart-error');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'chart-error alert alert-danger mt-2';
+                        section.appendChild(errorDiv);
+                    }
+                    
+                    // Set error message
+                    const errorMessage = error instanceof Error ? error.message : error.toString();
+                    errorDiv.innerHTML = `
+                        <p><i class="fa fa-exclamation-triangle mr-2"></i>Error rendering chart: ${errorMessage}</p>
+                    `;
+                }
+            }
+        }
+    }
+    
+    // Add sample data generator methods
+    generateLoan_trendData() {
+        return {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Book Loans',
+                data: [12, 19, 3, 5, 2, 3],
+                backgroundColor: 'rgba(26, 115, 232, 0.2)',
+                borderColor: 'rgba(26, 115, 232, 0.8)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointBackgroundColor: 'rgba(26, 115, 232, 1)',
+                pointBorderColor: '#fff',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: true
+            }]
+        };
+    }
+    
+    generateBook_categoriesData() {
+        return {
+            labels: ['Fiction', 'Non-Fiction', 'Sci-Fi', 'Biography', 'History'],
+            datasets: [{
+                data: [35, 25, 15, 15, 10],
+                backgroundColor: [
+                    'rgba(26, 115, 232, 0.8)',
+                    'rgba(52, 168, 83, 0.8)',
+                    'rgba(251, 188, 5, 0.8)',
+                    'rgba(241, 108, 119, 0.8)',
+                    'rgba(103, 58, 183, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(26, 115, 232, 1)',
+                    'rgba(52, 168, 83, 1)',
+                    'rgba(251, 188, 5, 1)',
+                    'rgba(241, 108, 119, 1)',
+                    'rgba(103, 58, 183, 1)'
+                ],
+                borderWidth: 1,
+                hoverOffset: 4
+            }]
+        };
+    }
+    
+    generateBook_acquisitionsData() {
+        return {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'New Books',
+                data: [5, 7, 10, 8, 12, 15],
+                backgroundColor: 'rgba(66, 133, 244, 0.8)',
+                borderColor: 'rgba(66, 133, 244, 1)',
+                borderWidth: 1,
+                borderRadius: 4,
+                barThickness: 25,
+                maxBarThickness: 35
+            }]
+        };
+    }
+    
+    generateLoan_statusData() {
+        return {
+            labels: ['Active', 'Returned', 'Overdue'],
+            datasets: [{
+                data: [65, 25, 10],
+                backgroundColor: [
+                    'rgba(52, 168, 83, 0.8)',
+                    'rgba(251, 188, 5, 0.8)',
+                    'rgba(234, 67, 53, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(52, 168, 83, 1)',
+                    'rgba(251, 188, 5, 1)',
+                    'rgba(234, 67, 53, 1)'
+                ],
+                borderWidth: 1,
+                hoverOffset: 4,
+                cutout: '60%'
+            }]
+        };
+    }
+    
+    generateMember_activitiesData() {
+        return {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [
+                {
+                    label: 'New Members',
+                    data: [5, 8, 6, 9, 12, 8],
+                    backgroundColor: 'rgba(26, 115, 232, 0.8)',
+                    borderColor: 'rgba(26, 115, 232, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barThickness: 15,
+                    maxBarThickness: 20
+                },
+                {
+                    label: 'Active Members',
+                    data: [15, 20, 18, 22, 28, 32],
+                    backgroundColor: 'rgba(255, 138, 101, 0.8)',
+                    borderColor: 'rgba(255, 138, 101, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barThickness: 15,
+                    maxBarThickness: 20
+                }
+            ]
+        };
+    }
+    
+    generateBook_conditionData() {
+        return {
+            labels: ['Excellent', 'Good', 'Fair', 'Poor', 'Damaged'],
+            datasets: [{
+                data: [45, 25, 15, 10, 5],
+                backgroundColor: [
+                    'rgba(52, 168, 83, 0.8)',
+                    'rgba(0, 158, 224, 0.8)',
+                    'rgba(255, 138, 101, 0.8)',
+                    'rgba(103, 58, 183, 0.8)',
+                    'rgba(251, 188, 5, 0.8)'
+                ],
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                borderWidth: 2
+            }]
+        };
+    }
+    
+    generateRevenueData() {
+        return {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Revenue ($)',
+                data: [1200, 1900, 1500, 2200, 1800, 2500],
+                backgroundColor: 'rgba(0, 184, 169, 0.8)',
+                borderColor: 'rgba(0, 184, 169, 1)',
+                borderWidth: 1,
+                borderRadius: 4,
+                barThickness: 25,
+                maxBarThickness: 35
+            }]
+        };
+    }
+    
+    generateReadingTimesData() {
+        return {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [
+                {
+                    label: 'Weekday Reading Hours',
+                    data: [3.5, 4.2, 3.8, 5.1, 4.3, 0, 0],
+                    backgroundColor: 'rgba(103, 58, 183, 0.8)',
+                    borderColor: 'rgba(103, 58, 183, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barThickness: 15,
+                    maxBarThickness: 20
+                },
+                {
+                    label: 'Weekend Reading Hours',
+                    data: [0, 0, 0, 0, 0, 7.5, 8.2],
+                    backgroundColor: 'rgba(186, 104, 200, 0.8)',
+                    borderColor: 'rgba(186, 104, 200, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barThickness: 15,
+                    maxBarThickness: 20
+                }
+            ]
+        };
     }
     
     // Handle window resize to adjust charts
@@ -416,39 +861,6 @@ class LibraryDashboardController {
         }, 200);
     }
     
-    // Generate sample data if not provided by the model
-    generateRevenueData() {
-        return {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Revenue',
-                data: [1200, 1900, 1300, 1500, 2200, 1800],
-                backgroundColor: 'rgba(153, 102, 255, 0.5)',
-                borderColor: 'rgba(153, 102, 255, 1)',
-                borderWidth: 1
-            }]
-        };
-    }
-    
-    generateReadingTimesData() {
-        return {
-            labels: ['Morning', 'Afternoon', 'Evening', 'Night'],
-            datasets: [{
-                label: 'Weekdays',
-                data: [20, 30, 45, 25],
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Weekends',
-                data: [15, 40, 55, 35],
-                backgroundColor: 'rgba(255, 159, 64, 0.5)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1
-            }]
-        };
-    }
-    
     // Render Revenue Chart
     renderRevenueChart(data) {
         const options = {
@@ -457,52 +869,85 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'top',
+                    align: 'end',
                     labels: {
-                        boxWidth: 15,
+                        boxWidth: 10,
                         padding: 15,
+                        usePointStyle: true,
                         font: {
-                            size: 13
+                            size: 11,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 },
                 tooltip: {
-                    padding: 10,
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
                     titleFont: {
-                        size: 14
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                     },
                     bodyFont: {
-                        size: 13
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('en-US', { 
+                                    style: 'currency', 
+                                    currency: 'USD' 
+                                }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
                     }
                 }
             },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             scales: {
-                y: { 
-                    beginAtZero: true,
-                    grid: {
-                        display: true,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$ ' + value;
-                        },
-                        font: {
-                            size: 12
-                        },
-                        padding: 5
-                    }
-                },
                 x: {
                     grid: {
                         display: false
                     },
                     ticks: {
                         font: {
-                            size: 12
-                        },
-                        padding: 5
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        }
                     }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [2, 2],
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        },
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    barThickness: 12,
+                    maxBarThickness: 18
                 }
             }
         };
@@ -518,101 +963,198 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'top',
+                    align: 'end',
                     labels: {
-                        boxWidth: 15,
+                        boxWidth: 10,
                         padding: 15,
+                        usePointStyle: true,
                         font: {
-                            size: 13
+                            size: 11,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 },
                 tooltip: {
-                    padding: 10,
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
                     titleFont: {
-                        size: 14
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                     },
                     bodyFont: {
-                        size: 13
-                    }
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
                 }
             },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             scales: {
-                y: { 
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
                 x: {
                     grid: {
                         display: false
                     },
                     ticks: {
                         font: {
-                            size: 12
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [2, 2],
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 }
             },
             elements: {
-                line: {
-                    tension: 0.4
-                },
-                point: {
-                    radius: 4,
-                    hoverRadius: 6
+                bar: {
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    barThickness: 10,
+                    maxBarThickness: 15
                 }
             }
         };
         
-        this.chartInstances.readingTimesChart = this.safelyCreateChart('readingTimesChart', 'line', data, options);
+        this.chartInstances.readingTimesChart = this.safelyCreateChart('readingTimesChart', 'bar', data, options);
     }
     
     // Helper method to safely create a chart
     safelyCreateChart(canvasId, chartType, data, options) {
         try {
+            // Add default options for better appearance
+            const defaultOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 800
+                },
+                layout: {
+                    padding: {
+                        top: 10,
+                        bottom: 10
+                    }
+                }
+            };
+            
+            // Merge default options with provided options
+            const mergedOptions = {
+                ...defaultOptions,
+                ...options
+            };
+            
+            // Set a specific height for the chart
             const canvas = document.getElementById(canvasId);
-            if (!canvas || !data) {
-                console.warn(`Cannot render chart: canvas #${canvasId} or data not available`);
+            if (!canvas) {
+                console.error(`Canvas element with ID '${canvasId}' not found`);
                 return null;
             }
             
-            // Ensure any existing chart is destroyed
-            if (this.chartInstances[canvasId]) {
-                this.chartInstances[canvasId].destroy();
-                this.chartInstances[canvasId] = null;
-            }
+            canvas.style.height = '250px';
+            canvas.height = 250;
             
-            // Also check if the canvas has a Chart instance attached to it
-            try {
-                const existingChart = Chart.getChart(canvas);
-                if (existingChart) {
-                    console.log(`Destroying existing chart on canvas #${canvasId}`);
+            // IMPORTANT: Force destroy any existing Chart instance for this canvas
+            // This addresses the "Canvas is already in use" error
+            
+            // 1. Check our own instance tracker
+            const existingChart = this.chartInstances[canvasId];
+            if (existingChart) {
+                console.log(`Destroying existing chart for ${canvasId} from our tracker`);
+                try {
                     existingChart.destroy();
+                } catch (e) {
+                    console.warn(`Error destroying chart from our tracker: ${e.message}`);
                 }
-            } catch (e) {
-                console.warn(`Error checking for existing chart on canvas #${canvasId}:`, e);
+                delete this.chartInstances[canvasId];
             }
             
-            // Create a new chart
-            const chart = new Chart(canvas, {
-                type: chartType,
-                data: data,
-                options: options || {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
+            // 2. Check if there's a Chart instance in the Chart.js registry
+            if (Chart.instances) {
+                // Iterate through all Chart instances
+                Object.values(Chart.instances).forEach(instance => {
+                    if (instance.canvas && instance.canvas.id === canvasId) {
+                        console.log(`Found dangling Chart instance (ID: ${instance.id}) for canvas ${canvasId}, destroying it`);
+                        try {
+                            instance.destroy();
+                        } catch (e) {
+                            console.warn(`Error destroying chart from Chart registry: ${e.message}`);
+                        }
+                    }
+                });
+            }
             
-            return chart;
+            // 3. As a last resort, clear the canvas context completely
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // 4. Create a fresh canvas to replace the old one
+            const parent = canvas.parentNode;
+            if (parent) {
+                const newCanvas = document.createElement('canvas');
+                newCanvas.id = canvasId;
+                newCanvas.style.height = '250px';
+                newCanvas.height = 250;
+                newCanvas.width = canvas.width;
+                newCanvas.className = canvas.className;
+                
+                // Replace old canvas with new one
+                parent.replaceChild(newCanvas, canvas);
+                
+                // Create new chart on the fresh canvas
+                console.log(`Creating new chart for ${canvasId} on fresh canvas`);
+                this.chartInstances[canvasId] = new Chart(
+                    newCanvas,
+                    {
+                        type: chartType,
+                        data: data,
+                        options: mergedOptions
+                    }
+                );
+            } else {
+                // Fallback to using the original canvas if we can't replace it
+                console.log(`Creating new chart for ${canvasId} (fallback method)`);
+                this.chartInstances[canvasId] = new Chart(
+                    canvas,
+                    {
+                        type: chartType,
+                        data: data,
+                        options: mergedOptions
+                    }
+                );
+            }
+            
+            return this.chartInstances[canvasId];
         } catch (error) {
-            console.error(`Error creating ${chartType} chart on canvas #${canvasId}:`, error);
+            console.error(`Error creating chart ${canvasId}:`, error);
+            
+            // Convert canvas ID to chart key
+            const chartKeyMap = {
+                'loanChart': 'loan_trend',
+                'categoryChart': 'book_categories',
+                'acquisitionsChart': 'book_acquisitions',
+                'loanStatusChart': 'loan_status',
+                'memberActivitiesChart': 'member_activities',
+                'bookConditionChart': 'book_condition',
+                'revenueChart': 'revenue',
+                'readingTimesChart': 'reading_times'
+            };
+            
+            const chartKey = chartKeyMap[canvasId] || canvasId;
+            this.displayChartError(chartKey, 'Failed to create chart: ' + error.message);
             return null;
         }
     }
@@ -625,35 +1167,73 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'top',
+                    align: 'end',
                     labels: {
+                        boxWidth: 10,
+                        padding: 15,
+                        usePointStyle: true,
                         font: {
-                            size: 13
+                            size: 11,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
+                    titleFont: {
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [2, 2],
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 }
             },
-            scales: {
-                y: { 
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            },
             elements: {
+                line: {
+                    tension: 0.4
+                },
                 point: {
-                    radius: 4,
-                    hoverRadius: 6
+                    radius: 3,
+                    hoverRadius: 5
                 }
             }
         };
         
-        this.chartInstances.loanChart = this.safelyCreateChart('loanChart', 'line', data, options);
+        this.chartInstances.loanTrendsChart = this.safelyCreateChart('loanChart', 'line', data, options);
     }
     
     renderCategoriesChart(data) {
@@ -663,21 +1243,34 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'right',
+                    align: 'center',
                     labels: {
-                        padding: 15,
+                        padding: 12,
+                        usePointStyle: true,
+                        boxWidth: 8,
                         font: {
-                            size: 13
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 },
                 tooltip: {
-                    padding: 10,
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
+                    titleFont: {
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
                 }
             }
         };
         
-        this.chartInstances.categoryChart = this.safelyCreateChart('categoryChart', 'pie', data, options);
+        this.chartInstances.categoriesChart = this.safelyCreateChart('categoryChart', 'pie', data, options);
     }
     
     renderAcquisitionsChart(data) {
@@ -687,24 +1280,63 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'top',
+                    align: 'end',
                     labels: {
+                        boxWidth: 10,
+                        padding: 15,
+                        usePointStyle: true,
                         font: {
-                            size: 13
+                            size: 11,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
+                    titleFont: {
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [2, 2],
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 }
             },
-            scales: {
-                y: { 
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
+            elements: {
+                bar: {
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    barThickness: 20,
+                    maxBarThickness: 30
                 }
             }
         };
@@ -719,19 +1351,32 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'right',
+                    align: 'center',
                     labels: {
-                        padding: 15,
+                        padding: 12,
+                        usePointStyle: true,
+                        boxWidth: 8,
                         font: {
-                            size: 13
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 },
                 tooltip: {
-                    padding: 10,
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
+                    titleFont: {
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
                 }
             },
-            cutout: '60%'
+            cutout: '65%'
         };
         
         this.chartInstances.loanStatusChart = this.safelyCreateChart('loanStatusChart', 'doughnut', data, options);
@@ -744,29 +1389,60 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'top',
+                    align: 'end',
                     labels: {
+                        boxWidth: 10,
+                        padding: 15,
+                        usePointStyle: true,
                         font: {
-                            size: 13
+                            size: 11,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
+                    titleFont: {
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
                 }
             },
             scales: {
                 r: {
+                    angleLines: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        backdropColor: 'transparent',
+                        font: {
+                            size: 9
+                        }
+                    },
                     pointLabels: {
                         font: {
-                            size: 12
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 }
             },
             elements: {
                 line: {
-                    borderWidth: 3
+                    borderWidth: 2
                 },
                 point: {
-                    radius: 4,
-                    hoverRadius: 6
+                    radius: 3,
+                    hoverRadius: 5
                 }
             }
         };
@@ -781,22 +1457,184 @@ class LibraryDashboardController {
             plugins: {
                 legend: {
                     position: 'right',
+                    align: 'center',
                     labels: {
-                        padding: 15,
+                        padding: 12,
+                        usePointStyle: true,
+                        boxWidth: 8,
                         font: {
-                            size: 12
+                            size: 10,
+                            family: "'Lato', 'Helvetica', 'Arial', sans-serif"
                         }
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+                    backgroundColor: 'rgba(53, 73, 94, 0.9)',
+                    titleFont: {
+                        size: 12,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 11,
+                        family: "'Lato', 'Helvetica', 'Arial', sans-serif"
+                    },
+                    padding: 8,
+                    cornerRadius: 4
+                }
+            },
+            scales: {
+                r: {
+                    ticks: {
+                        backdropColor: 'transparent',
+                        font: {
+                            size: 9
+                        }
+                    }
                 }
             }
         };
         
         this.chartInstances.bookConditionChart = this.safelyCreateChart('bookConditionChart', 'polarArea', data, options);
     }
+    
+    // Function to refresh all charts
+    refreshAllCharts() {
+        console.log("Refreshing all charts...");
+        
+        // Ensure full width is applied
+        this.forceFullWidth();
+        
+        // Check if refresh is already in progress
+        if (this._refreshing) {
+            console.log("Chart refresh already in progress, ignoring request");
+            return;
+        }
+        
+        this._refreshing = true;
+        
+        // Show loading indicator
+        const dashboardEl = document.querySelector('.o_dashboard_charts');
+        if (dashboardEl) {
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'text-center p-3 refresh-indicator';
+            loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p class="mt-2">Refreshing charts...</p>';
+            dashboardEl.appendChild(loadingIndicator);
+            
+            // Update button state if it exists
+            const reloadBtn = document.querySelector('.reload_charts_btn');
+            if (reloadBtn) {
+                reloadBtn.disabled = true;
+                reloadBtn.textContent = 'Refreshing...';
+            }
+        }
+        
+        // Destroy existing charts - thorough cleanup
+        this.cleanupAllChartInstances();
+        
+        // Clear chart data to force reload
+        this.chartData = null;
+        
+        // Re-fetch chart data
+        this.fetchDataFromServer()
+            .then(() => {
+                // Remove loading indicator
+                const indicator = document.querySelector('.refresh-indicator');
+                if (indicator) indicator.remove();
+                
+                // Update button state
+                const reloadBtn = document.querySelector('.reload_charts_btn');
+                if (reloadBtn) {
+                    reloadBtn.disabled = false;
+                    reloadBtn.textContent = 'Reload Charts';
+                }
+                
+                this._refreshing = false;
+            })
+            .catch(error => {
+                console.error("Error refreshing charts:", error);
+                
+                // Remove loading indicator
+                const indicator = document.querySelector('.refresh-indicator');
+                if (indicator) indicator.remove();
+                
+                // Update button state and show error
+                const reloadBtn = document.querySelector('.reload_charts_btn');
+                if (reloadBtn) {
+                    reloadBtn.disabled = false;
+                    reloadBtn.textContent = 'Retry Refresh';
+                }
+                
+                // Show error message
+                const dashboardEl = document.querySelector('.o_dashboard_charts');
+                if (dashboardEl) {
+                    dashboardEl.innerHTML += `
+                        <div class="alert alert-danger">
+                            <p>Error refreshing charts: ${error.message}</p>
+                        </div>
+                    `;
+                }
+                
+                this._refreshing = false;
+            });
+    }
+    
+    // New method to thoroughly clean up all chart instances
+    cleanupAllChartInstances() {
+        console.log("Thoroughly cleaning up all chart instances...");
+        
+        // 1. Clean up our tracked instances
+        if (this.chartInstances) {
+            Object.entries(this.chartInstances).forEach(([id, chart]) => {
+                if (chart && typeof chart.destroy === 'function') {
+                    try {
+                        console.log(`Destroying chart instance for ${id}`);
+                        chart.destroy();
+                    } catch (e) {
+                        console.warn(`Error destroying chart ${id}:`, e);
+                    }
+                }
+            });
+            this.chartInstances = {};
+        }
+        
+        // 2. Clean up any global Chart.js instances
+        if (typeof Chart !== 'undefined' && Chart.instances) {
+            Object.values(Chart.instances).forEach(instance => {
+                try {
+                    console.log(`Destroying global Chart.js instance (ID: ${instance.id})`);
+                    instance.destroy();
+                } catch (e) {
+                    console.warn(`Error destroying global chart instance:`, e);
+                }
+            });
+        }
+        
+        // 3. As a last resort, replace all chart canvases with fresh ones
+        const canvasIds = [
+            'loanChart', 'categoryChart', 'acquisitionsChart', 
+            'loanStatusChart', 'memberActivitiesChart', 'bookConditionChart',
+            'revenueChart', 'readingTimesChart'
+        ];
+        
+        canvasIds.forEach(id => {
+            const canvas = document.getElementById(id);
+            if (canvas && canvas.parentNode) {
+                const newCanvas = document.createElement('canvas');
+                newCanvas.id = id;
+                newCanvas.className = canvas.className;
+                newCanvas.style.height = canvas.style.height || '250px';
+                newCanvas.height = canvas.height || 250;
+                newCanvas.width = canvas.width;
+                
+                console.log(`Replacing canvas element for ${id}`);
+                canvas.parentNode.replaceChild(newCanvas, canvas);
+            }
+        });
+    }
 }
+
+// Make LibraryDashboardController available globally
+window.LibraryDashboardController = LibraryDashboardController;
 
 // Initialize the dashboard charts
 function initDashboard() {

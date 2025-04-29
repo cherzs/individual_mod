@@ -2,3 +2,6 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_custom_book_user,custom.book.user,model_custom_book,base.group_user,1,1,1,1
 access_custom_author_user,custom.author.user,model_custom_author,base.group_user,1,1,1,1
 access_custom_book_genre_user,custom.book.genre.user,model_custom_book_genre,base.group_user,1,1,1,1
+access_custom_library_dashboard_user,custom.library.dashboard.user,model_custom_library_dashboard,base.group_user,1,1,1,1
+access_custom_book_loan_user,custom.book.loan.user,model_custom_book_loan,base.group_user,1,1,1,1
+access_custom_library_member_user,custom.library.member.user,model_custom_library_member,base.group_user,1,1,1,1

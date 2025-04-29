@@ -1,0 +1,370 @@
+/* Library Dashboard Styles */
+.o_dashboard_charts {
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    margin-top: 15px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.charts_container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+    margin: 0;
+    padding: 0;
+}
+
+.chart_row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    justify-content: space-between;
+}
+
+.chart_section {
+    flex: 1;
+    min-width: 280px;
+    max-width: calc(50% - 8px);
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 10px;
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid #eaeaea;
+    transition: box-shadow 0.2s ease;
+    margin-bottom: 0;
+    width: calc(50% - 8px);
+}
+
+.chart_section:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.chart_section h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #3c4043;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.chart_section canvas {
+    width: 100% !important;
+    height: 250px !important;
+    max-height: 300px !important;
+}
+
+/* Dashboard KPIs - card styling */
+.row.mx-0.mb-4 .card,
+.row.mx-0.mb-3 .card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border-radius: 6px;
+    border: 1px solid #eaeaea;
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.row.mx-0.mb-4 .card:hover,
+.row.mx-0.mb-3 .card:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+
+.row.mx-0.mb-4 .card-body,
+.row.mx-0.mb-3 .card-body {
+    padding: 12px;
+}
+
+.row.mx-0.mb-4 .card-title,
+.row.mx-0.mb-3 .card-title {
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #6c757d;
+}
+
+.row.mx-0.mb-4 h2, 
+.row.mx-0.mb-4 h4,
+.row.mx-0.mb-3 h2,
+.row.mx-0.mb-3 h4 {
+    font-weight: 600;
+    margin-bottom: 0 !important;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.row.mx-0.mb-4 h4,
+.row.mx-0.mb-3 h4 {
+    font-size: 16px;
+}
+
+/* Loading state */
+.chart-loading {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+/* Chart reload button */
+.o_chart_reload_btn, 
+.reload_charts_btn,
+.btn.btn-primary.mb-3 {
+    padding: 6px 12px;
+    font-size: 12px;
+    background-color: #3498db;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 12px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+}
+
+.o_chart_reload_btn:hover,
+.reload_charts_btn:hover,
+.btn.btn-primary.mb-3:hover {
+    background-color: #2980b9;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+}
+
+/* Error state */
+.chart-error {
+    padding: 10px;
+    background-color: #fff3f3;
+    border: 1px solid #ffcccb;
+    border-radius: 4px;
+    color: #d9534f;
+    text-align: center;
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+/* Override any Odoo standard layout constraints */
+.o_form_view .o_form_sheet_bg {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.o_form_view .o_form_sheet {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+}
+
+/* Remove margins around form sheet */
+.o_form_view .o_form_sheet_bg > .o_form_sheet {
+    margin: 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+}
+
+/* Fix odd spacing issues */
+.o_notebook {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .chart_section {
+        min-width: 100%;
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .chart_section canvas {
+        height: 280px !important;
+    }
+    
+    .charts_container {
+        gap: 10px;
+    }
+    
+    .chart_row {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .charts_container {
+        gap: 10px;
+    }
+    
+    .chart_row {
+        gap: 10px;
+    }
+    
+    .chart_section {
+        padding: 12px;
+    }
+    
+    .chart_section canvas {
+        height: 220px !important;
+    }
+    
+    .chart_section h3 {
+        font-size: 12px;
+        padding-bottom: 6px;
+        margin-bottom: 8px;
+    }
+}
+
+/* Improve Firefox rendering */
+@-moz-document url-prefix() {
+    .chart_section canvas {
+        height: 260px !important;
+    }
+}
+
+/* Improve Safari rendering */
+@media not all and (min-resolution:.001dpcm) {
+    @supports (-webkit-appearance:none) {
+        .chart_section canvas {
+            height: 260px !important;
+        }
+    }
+}
+
+/* Ensure the chart area is full width */
+.oe_chart {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Full width classes */
+.full-width-chart {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.dashboard-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+}
+
+.o_dashboard_chart.full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Force the dashboard container to expand to full width */
+.o_content .o_form_view {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* Override Odoo's default max-width for form views */
+.o_form_view.o_form_readonly {
+    max-width: none !important;
+}
+
+/* Remove fixed widths from Odoo's layout */
+.o_form_view .oe_title, 
+.o_form_view .oe_button_box {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Ensure notebook takes full width */
+.o_notebook {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Make page content full width */
+.o_notebook .tab-content,
+.o_notebook .tab-pane {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Dashboard header stats */
+.oe_stat_button {
+    transition: all 0.2s ease;
+}
+
+.oe_stat_button:hover {
+    background-color: #f5f5f5;
+}
+
+/* Performance metrics styling */
+.o_group {
+    margin-bottom: 20px !important;
+}
+
+/* Spinner animation for loading */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.25rem;
+}
+
+/* Add fade-in animation for charts */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chart_section {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.chart_section:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+/* Make the refresh indicator more visible */
+.refresh-indicator {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+/* Fix untuk dashboard yang berada di tengah */
+.o_dashboard_chart.full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.charts_container {
+    width: 100% !important;
+}
+
+.chart_row {
+    width: 100% !important;
+    display: flex;
+    justify-content: space-between;
+} 

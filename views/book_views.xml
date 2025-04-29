@@ -26,12 +26,15 @@
                         <group>
                             <field name="isbn"/>
                             <field name="author_id"/>
+                            <field name="genre_id"/>
                             <field name="publisher"/>
                             <field name="date_published"/>                           
                         </group>
                         <group>
                             <field name="genre_ids" widget="many2many_tags"/>
                             <field name="pages"/>
+                            <field name="acquisition_date"/>
+                            <field name="condition"/>
                             <field name="currency_id"/>
                             <field name="price"/>
                             <field name="active"/>

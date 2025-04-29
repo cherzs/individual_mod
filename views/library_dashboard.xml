@@ -5,10 +5,10 @@
             <field name="name">custom.library.dashboard.form</field>
             <field name="model">custom.library.dashboard</field>
             <field name="arch" type="xml">
-                <form create="false" edit="false" delete="false" options="{'action_buttons': false}">
-                    <sheet>
+                <form create="false" edit="false" delete="false" options="{'action_buttons': false}" class="oe_dashboard_form">
+                    <sheet class="oe_dashboard_sheet">
                         <div class="oe_title">
-                            <h1>Library Dashboard</h1>
+                            <h1 class="mt-2 mb-3">Library Dashboard</h1>
                         </div>
                         <div class="oe_button_box" name="button_box">
                             <button name="action_view_books" type="object" class="oe_stat_button" icon="fa-book">
@@ -26,21 +26,61 @@
                         </div>
                         <notebook>
                             <page string="Performance">
-                                <group>
-                                    <group>
-                                        <field name="total_revenue_mtd"/>
-                                        <field name="total_revenue_ytd"/>
-                                        <field name="average_loan_duration"/>
-                                    </group>
-                                    <group>
-                                        <field name="most_borrowed_genre_id"/>
-                                        <field name="most_active_member_id"/>
-                                        <field name="revenue_growth"/>
-                                    </group>
-                                </group>
+                                <div class="row mx-0 mb-3">
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-muted">Monthly Revenue</h5>
+                                                <h2 class="mb-0"><field name="total_revenue_mtd"/></h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-muted">Yearly Revenue</h5>
+                                                <h2 class="mb-0"><field name="total_revenue_ytd"/></h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-muted">Avg. Loan Duration</h5>
+                                                <h2 class="mb-0"><field name="average_loan_duration"/></h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mx-0 mb-4">
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-muted">Popular Genre</h5>
+                                                <h4 class="mb-0"><field name="most_borrowed_genre_id"/></h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-muted">Top Member</h5>
+                                                <h4 class="mb-0"><field name="most_active_member_id"/></h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-muted">Revenue Growth</h5>
+                                                <h4 class="mb-0"><field name="revenue_growth"/></h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="oe_chart">
-                                    <field name="graph_data" widget="text" invisible="1" class="o_chart_data"/>
-                                    <div class="o_dashboard_charts"/>
+                                    <field name="graph_data" widget="text" invisible="1" class="o_chart_data"/>                   
+                                    <div class="o_dashboard_charts"></div>
                                 </div>
                             </page>
                         </notebook>

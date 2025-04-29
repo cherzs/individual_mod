@@ -1,0 +1,163 @@
+/* Library Dashboard Chart Colors */
+
+/* Modern color palettes for different chart types */
+:root {
+    /* Primary palette - Blues and teals */
+    --chart-color-1: rgba(26, 115, 232, 0.85);
+    --chart-color-2: rgba(66, 133, 244, 0.85);  
+    --chart-color-3: rgba(52, 168, 83, 0.85);
+    --chart-color-4: rgba(0, 184, 169, 0.85);
+    --chart-color-5: rgba(0, 158, 224, 0.85);
+    
+    /* Secondary palette - Warm colors */
+    --chart-color-6: rgba(251, 188, 5, 0.85);
+    --chart-color-7: rgba(255, 138, 101, 0.85);
+    --chart-color-8: rgba(234, 67, 53, 0.85);
+    --chart-color-9: rgba(241, 108, 119, 0.85);
+    --chart-color-10: rgba(244, 132, 31, 0.85);
+    
+    /* Neutrals and pastels */
+    --chart-color-11: rgba(103, 58, 183, 0.85);
+    --chart-color-12: rgba(179, 157, 219, 0.85);
+    --chart-color-13: rgba(186, 104, 200, 0.85);
+    --chart-color-14: rgba(144, 202, 249, 0.85);
+    --chart-color-15: rgba(129, 199, 132, 0.85);
+}
+
+/* Odoo Form styles enhancement */
+.o_form_view {
+    background-color: #f8f9fa;
+}
+
+/* Stats button enhancements */
+.oe_stat_button {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin: 2px !important;
+}
+
+.oe_stat_button .o_stat_info {
+    font-size: 0.95em;
+}
+
+.oe_stat_button .o_stat_value {
+    font-weight: 600;
+}
+
+/* Enhanced chart container styles */
+.chart_section {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.chart_section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Chart title refinements */
+.chart_section h3 {
+    font-weight: 600;
+    color: #3c4043;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.chart_section h3 i {
+    color: #5f6368;
+    margin-right: 8px;
+}
+
+/* Card styling for KPIs */
+.row.mx-0 .card {
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.row.mx-0 .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.row.mx-0 .card h2,
+.row.mx-0 .card h4 {
+    color: #3c4043;
+}
+
+.row.mx-0 .card .card-title {
+    color: #5f6368;
+    font-size: 12px;
+}
+
+/* Make the page look more modern with consistent fonts */
+.o_form_view .o_form_sheet {
+    font-family: 'Lato', 'Helvetica', 'Arial', sans-serif;
+}
+
+/* Chart loading animation */
+.chart-loading {
+    background: linear-gradient(135deg, #f8f9fa 0%, #eef2f7 100%);
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    50% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.chart-loading .spinner-border {
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Apply colors to chart canvas elements */
+/* We apply these via CSS variables that will be picked up by our custom chart options */
+
+#loanChart {
+    --line-color: var(--chart-color-5);
+    --point-color: var(--chart-color-4);
+    --area-color: rgba(0, 158, 224, 0.1);
+}
+
+#categoryChart {
+    --pie-color-1: var(--chart-color-1);
+    --pie-color-2: var(--chart-color-3);
+    --pie-color-3: var(--chart-color-6);
+    --pie-color-4: var(--chart-color-9);
+    --pie-color-5: var(--chart-color-11);
+}
+
+#acquisitionsChart {
+    --bar-color: var(--chart-color-2);
+    --bar-hover-color: var(--chart-color-5);
+}
+
+#loanStatusChart {
+    --doughnut-color-1: var(--chart-color-3);
+    --doughnut-color-2: var(--chart-color-6);
+    --doughnut-color-3: var(--chart-color-8);
+}
+
+#memberActivitiesChart {
+    --bar-color-1: var(--chart-color-1);
+    --bar-color-2: var(--chart-color-7);
+}
+
+#bookConditionChart {
+    --polar-color-1: var(--chart-color-3);
+    --polar-color-2: var(--chart-color-5);
+    --polar-color-3: var(--chart-color-7);
+    --polar-color-4: var(--chart-color-11);
+    --polar-color-5: var(--chart-color-6);
+}
+
+#revenueChart {
+    --bar-color: var(--chart-color-4);
+    --bar-hover-color: var(--chart-color-5);
+}
+
+#readingTimesChart {
+    --bar-color-1: var(--chart-color-11);
+    --bar-color-2: var(--chart-color-13);
+} 
