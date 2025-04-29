@@ -34,8 +34,6 @@ class LibraryDashboardController {
             
             // Check if we've exceeded the maximum attempts
             if (this._initAttempts > this.MAX_INIT_ATTEMPTS) {
-                console.error(`Exceeded maximum initialization attempts (${this.MAX_INIT_ATTEMPTS}). Aborting.`);
-                
                 // Display error message to user
                 const dashboardEl = document.querySelector('.o_dashboard_charts');
                 if (dashboardEl) {
@@ -57,7 +55,6 @@ class LibraryDashboardController {
             
             // Load Chart.js if not already loaded
             await waitForChartJs().catch(e => {
-                console.error("Error loading Chart.js:", e);
                 throw new Error("Failed to load Chart.js library: " + e.message);
             });
             
@@ -87,7 +84,7 @@ class LibraryDashboardController {
             this.initialized = true;
             this._initAttempts = 0; // Reset counter after successful initialization
         } catch (error) {
-            console.error("Dashboard initialization error:", error);
+            // console.error("Dashboard initialization error:", error);
             this.error = error.message || "Initialization failed";
             
             // Try again with a limit
@@ -202,7 +199,6 @@ class LibraryDashboardController {
     injectChartTemplate() {
         const dashboardContainer = document.querySelector('.o_dashboard_charts');
         if (!dashboardContainer) {
-            console.error("Dashboard container not found");
             return;
         }
         
@@ -302,7 +298,6 @@ class LibraryDashboardController {
                 
                 // Check if we've exceeded the maximum attempts
                 if (this._loadAttempts > this.MAX_LOAD_ATTEMPTS) {
-                    console.error(`Exceeded maximum chart data loading attempts (${this.MAX_LOAD_ATTEMPTS}). Aborting.`);
                     this._loadAttempts = 0; // Reset for future attempts
                     reject(new Error(`Failed to load chart data after ${this.MAX_LOAD_ATTEMPTS} attempts`));
                     return;
@@ -311,7 +306,6 @@ class LibraryDashboardController {
                 // Find the dashboard element
                 const dashboardEl = document.querySelector('.o_dashboard_charts');
                 if (!dashboardEl) {
-                    console.error("Dashboard element not found");
                     reject(new Error("Dashboard element not found"));
                     return;
                 }
@@ -323,8 +317,6 @@ class LibraryDashboardController {
                     resolve();
                     return; // Exit after successfully fetching from server
                 } catch (error) {
-                    console.error("Error fetching data from server:", error);
-                    
                     // Attempt to find data in the DOM as fallback
                     
                     // Find the graph_data field in various ways Odoo might render it
@@ -362,14 +354,12 @@ class LibraryDashboardController {
                             }, 300);
                             return;
                         } catch (parseError) {
-                            console.error("Error parsing JSON data from DOM:", parseError);
                             // Continue to fallback data instead of rejecting
                         }
                     }
                     
                     // Last resort: Create dummy data so something displays
                     // This prevents the dashboard from crashing completely
-                    console.warn("Using dummy data as fallback since API and DOM data are unavailable");
                     this.chartData = this._createDummyChartData();
                     
                     // Show notification about using demo data
@@ -419,12 +409,11 @@ class LibraryDashboardController {
                     return;
                 }
             } catch (error) {
-                console.error("Error loading chart data:", error);
+                // console.error("Error loading chart data:", error);
                 this.error = error.message || "Failed to load chart data";
                 
                 // Try again with a limit if there was an unexpected error
                 if (this._loadAttempts < this.MAX_LOAD_ATTEMPTS) {
-                    console.log(`Retrying chart data loading (attempt ${this._loadAttempts} of ${this.MAX_LOAD_ATTEMPTS})...`);
                     setTimeout(() => {
                         this.loadChartData()
                             .then(resolve)
@@ -610,7 +599,6 @@ class LibraryDashboardController {
                                     });
                                 }
                             } catch (rpcError) {
-                                console.error("RPC error:", rpcError);
                                 reject(rpcError);
                                 return;
                             }
@@ -659,18 +647,15 @@ class LibraryDashboardController {
                             this.renderCharts();
                             resolve(result);
                         } else {
-                            console.error("Invalid server response format:", result);
                             reject(new Error("Server returned an error or invalid data"));
                         }
                     } catch (error) {
-                        console.error("Error in fetchData:", error);
                         reject(error);
                     }
                 };
                 
                 fetchData();
             } catch (error) {
-                console.error("Error setting up fetch:", error);
                 reject(error);
             }
         });
@@ -684,7 +669,6 @@ class LibraryDashboardController {
                 
                 // Check if we've exceeded the maximum attempts
                 if (this._renderAttempts > this.MAX_RENDER_ATTEMPTS) {
-                    console.error(`Exceeded maximum chart rendering attempts (${this.MAX_RENDER_ATTEMPTS}). Aborting.`);
                     this._renderAttempts = 0; // Reset for future attempts
                     reject(new Error(`Failed to render charts after ${this.MAX_RENDER_ATTEMPTS} attempts`));
                     return;
@@ -692,7 +676,6 @@ class LibraryDashboardController {
                 
                 // Make sure we have data to render
                 if (!this.chartData) {
-                    console.error("No chart data available for rendering");
                     reject(new Error("No chart data available"));
                     return;
                 }
@@ -742,7 +725,7 @@ class LibraryDashboardController {
                 
                 resolve();
             } catch (error) {
-                console.error("Error rendering charts:", error);
+                // console.error("Error rendering charts:", error);
                 this.error = error.message || "Failed to render charts";
                 
                 if (this._renderAttempts < this.MAX_RENDER_ATTEMPTS) {
@@ -789,8 +772,6 @@ class LibraryDashboardController {
             if (data) {
                 renderFunction(data);
             } else {
-                console.warn(`Data for ${chartKey} not found. Check LibraryDashboard.py for missing chart data.`);
-                
                 // Display a message in the chart area
                 const canvasId = this.getCanvasIdForChart(chartKey);
                 if (canvasId) {
@@ -808,7 +789,6 @@ class LibraryDashboardController {
                 }
             }
         } catch (error) {
-            console.error(`Error rendering ${chartKey} chart:`, error);
             // Use the displayChartError method to show the error
             this.displayChartError(chartKey, error);
         }
@@ -834,7 +814,6 @@ class LibraryDashboardController {
      * @param {Error|string} error - The error object or message
      */
     displayChartError(chartKey, error) {
-        console.error(`Error rendering ${chartKey} chart:`, error);
         // Find the canvas for this chart and show error
         const canvasId = this.getCanvasIdForChart(chartKey);
         if (canvasId) {
@@ -879,20 +858,17 @@ class LibraryDashboardController {
                         // Verify the chart's canvas is still in the DOM
                         const canvas = chart.canvas;
                         if (!canvas || !document.body.contains(canvas)) {
-                            console.warn(`Chart canvas for ${id} is no longer in the DOM, cannot resize`);
                             return;
                         }
                         
                         // Make sure canvas has valid dimensions
                         if (canvas.offsetWidth <= 0 || canvas.offsetHeight <= 0) {
-                            console.warn(`Chart canvas for ${id} has zero dimensions, cannot resize`);
                             return;
                         }
                         
                         // If we got this far, the chart should be safe to resize
                         chart.resize();
                     } catch (error) {
-                        console.warn(`Error resizing chart ${id}:`, error);
                         // Remove reference to problematic chart to prevent future errors
                         delete this.chartInstances[id];
                     }
@@ -1077,7 +1053,6 @@ class LibraryDashboardController {
             // First find the canvas to check if it exists
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
-                console.error(`Canvas element not found for ${canvasId}`);
                 return null;
             }
             
@@ -1088,7 +1063,6 @@ class LibraryDashboardController {
                     this.chartInstances[canvasId].destroy();
                     // Remove from our tracker
                 } catch (destroyError) {
-                    console.error(`Error destroying existing chart for ${canvasId}:`, destroyError);
                 }
                 
                 // Remove from our tracker after destroy attempt
@@ -1102,7 +1076,6 @@ class LibraryDashboardController {
                         try {
                             instance.destroy();
                         } catch (e) {
-                            console.error(`Error destroying Chart.js instance for ${canvasId}:`, e);
                         }
                     }
                 });
@@ -1145,8 +1118,6 @@ class LibraryDashboardController {
                 
                 return chartInstance;
             } catch (chartError) {
-                console.error(`Error creating chart for ${canvasId}:`, chartError);
-                
                 // Fallback method if the normal approach doesn't work
                 try {
                     // Try again with a simpler approach
@@ -1164,12 +1135,10 @@ class LibraryDashboardController {
                     
                     return chartInstance;
                 } catch (fallbackError) {
-                    console.error(`Fallback chart creation also failed for ${canvasId}:`, fallbackError);
                     return null;
                 }
             }
         } catch (error) {
-            console.error(`Fatal error creating chart ${canvasId}:`, error);
             return null;
         }
     }
@@ -1517,7 +1486,6 @@ class LibraryDashboardController {
         return new Promise(async (resolve, reject) => {
             // Prevent multiple refreshes running simultaneously
             if (this._refreshing) {
-                console.warn("Chart refresh already in progress, ignoring request");
                 return resolve();
             }
             
@@ -1611,11 +1579,9 @@ class LibraryDashboardController {
                             await this.renderCharts();
                             return result;
                         } else {
-                            console.error("Invalid server response format:", result);
                             throw new Error("Server returned an error or invalid data");
                         }
                     } catch (error) {
-                        console.error("Error refreshing data:", error);
                         throw error;
                     }
                 };
@@ -1623,8 +1589,6 @@ class LibraryDashboardController {
                 try {
                     await refreshData();
                 } catch (error) {
-                    console.error("Error during refresh:", error);
-                    
                     // Restore backup data if refresh failed
                     if (backupData) {
                         this.chartData = backupData;
@@ -1675,8 +1639,6 @@ class LibraryDashboardController {
                 this._refreshing = false;
                 resolve();
             } catch (error) {
-                console.error("Fatal error during chart refresh:", error);
-                
                 // Remove loading overlays even if there was an error
                 document.querySelectorAll('.chart-loading-overlay').forEach(overlay => {
                     if (overlay.parentNode) {
@@ -1700,7 +1662,6 @@ class LibraryDashboardController {
                         instance.destroy();
                     }
                 } catch (e) {
-                    console.error(`Error destroying chart instance for ${id}:`, e);
                 }
             });
             
@@ -1715,7 +1676,6 @@ class LibraryDashboardController {
                             instance.destroy();
                         }
                     } catch (e) {
-                        console.error(`Error destroying global Chart.js instance (ID: ${instance.id}):`, e);
                     }
                 });
             }
@@ -1759,7 +1719,6 @@ class LibraryDashboardController {
             
             return true;
         } catch (error) {
-            console.error("Error cleaning up chart instances:", error);
             return false;
         }
     }
@@ -1779,8 +1738,6 @@ function patchChartJsResize() {
             try {
                 return originalResize.apply(this, arguments);
             } catch (error) {
-                console.error('Error in Chart.js resize:', error);
-                // Implement more robust resize fallback if needed
             }
         };
     }
@@ -1872,7 +1829,6 @@ function initDashboard() {
                 setTimeout(checkForDashboard, checkInterval);
             } else {
                 // Give up after max checks
-                console.warn(`Dashboard element not found after ${maxChecks} attempts`);
             }
         };
         

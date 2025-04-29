@@ -9,11 +9,11 @@
 (function() {
     // Check if Chart.js is already loaded
     if (typeof Chart !== 'undefined') {
-        console.log("Chart.js is already loaded");
+        
         return;
     }
     
-    console.log("Loading Chart.js from CDN...");
+    
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
     script.async = false; // Make sure it loads synchronously
@@ -77,7 +77,7 @@ export function safelyDestroyChart(canvasId) {
         
         return false;
     } catch (error) {
-        console.error(`Error safely destroying chart at canvas #${canvasId}:`, error);
+        // Error safely destroying chart
         return false;
     }
 } 

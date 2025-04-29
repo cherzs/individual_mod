@@ -8,7 +8,7 @@
             <form>
                 <header>
                     <button name="action_confirm" string="Confirm" type="object" 
-                            class="oe_highlight my-2" invisible="state != 'draft'"/>
+                            class="oe_highlight ms-2 my-2" invisible="state != 'draft'"/>
                     <button name="action_return" string="Return Book" type="object" 
                             class="oe_highlight ms-2 my-2" invisible="state != 'confirmed'"/>
                     <button name="action_mark_lost" string="Mark as Lost" type="object" 
