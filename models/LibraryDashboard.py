@@ -3,6 +3,8 @@ from odoo import models, fields, api, _
 import json
 import logging
 from dateutil.relativedelta import relativedelta
+from datetime import datetime
+from calendar import monthrange
 
 _logger = logging.getLogger(__name__)
 
@@ -111,18 +113,106 @@ class LibraryDashboard(models.Model):
     @api.depends()
     def _compute_revenue(self):
         for record in self:
-            # Implementasi perhitungan revenue
-            record.total_revenue_mtd = 0
-            record.total_revenue_ytd = 0
-            record.revenue_growth = 0
+            today = fields.Date.today()
+            
+            # Calculate MTD revenue (Month To Date)
+            first_day_of_month = today.replace(day=1)
+            mtd_loans = self.env['custom.book.loan'].search([
+                ('actual_return_date', '>=', first_day_of_month),
+                ('actual_return_date', '<=', today),
+                ('state', '=', 'returned'),
+                ('fine_amount', '>', 0)
+            ])
+            record.total_revenue_mtd = sum(mtd_loans.mapped('fine_amount'))
+            
+            # Calculate YTD revenue (Year To Date)
+            first_day_of_year = today.replace(month=1, day=1)
+            ytd_loans = self.env['custom.book.loan'].search([
+                ('actual_return_date', '>=', first_day_of_year),
+                ('actual_return_date', '<=', today),
+                ('state', '=', 'returned'),
+                ('fine_amount', '>', 0)
+            ])
+            record.total_revenue_ytd = sum(ytd_loans.mapped('fine_amount'))
+            
+            # Calculate revenue growth
+            # Compare this month with previous month
+            prev_month_end = first_day_of_month - relativedelta(days=1)
+            prev_month_start = prev_month_end.replace(day=1)
+            
+            prev_month_loans = self.env['custom.book.loan'].search([
+                ('actual_return_date', '>=', prev_month_start),
+                ('actual_return_date', '<=', prev_month_end),
+                ('state', '=', 'returned'),
+                ('fine_amount', '>', 0)
+            ])
+            prev_month_revenue = sum(prev_month_loans.mapped('fine_amount'))
+            
+            # Calculate growth percentage
+            if prev_month_revenue > 0:
+                record.revenue_growth = ((record.total_revenue_mtd - prev_month_revenue) / prev_month_revenue) * 100
+            else:
+                record.revenue_growth = 100 if record.total_revenue_mtd > 0 else 0
     
     @api.depends()
     def _compute_statistics(self):
         for record in self:
-            # Implementasi statistik
-            record.average_loan_duration = 0
-            record.most_borrowed_genre_id = False
-            record.most_active_member_id = False
+            # Calculate average loan duration
+            returned_loans = self.env['custom.book.loan'].search([
+                ('state', '=', 'returned'),
+                ('actual_return_date', '!=', False)
+            ])
+            
+            if returned_loans:
+                # Calculate duration for each loan
+                durations = []
+                for loan in returned_loans:
+                    if loan.loan_date and loan.actual_return_date:
+                        duration = (loan.actual_return_date - loan.loan_date).days
+                        durations.append(duration)
+                
+                # Calculate average
+                if durations:
+                    record.average_loan_duration = sum(durations) / len(durations)
+                else:
+                    record.average_loan_duration = 0
+            else:
+                record.average_loan_duration = 0
+            
+            # Find most borrowed genre
+            query = """
+                SELECT bg.id, COUNT(bl.id) as loan_count
+                FROM custom_book_genre bg
+                JOIN custom_book b ON b.genre_id = bg.id
+                JOIN custom_book_loan bl ON bl.book_id = b.id
+                GROUP BY bg.id
+                ORDER BY loan_count DESC
+                LIMIT 1
+            """
+            self.env.cr.execute(query)
+            result = self.env.cr.fetchone()
+            
+            if result and result[0]:
+                record.most_borrowed_genre_id = result[0]
+            else:
+                record.most_borrowed_genre_id = False
+            
+            # Find most active member
+            query = """
+                SELECT m.partner_id, COUNT(bl.id) as loan_count
+                FROM custom_library_member m
+                JOIN custom_book_loan bl ON bl.member_id = m.partner_id
+                GROUP BY m.partner_id
+                ORDER BY loan_count DESC
+                LIMIT 1
+            """
+            self.env.cr.execute(query)
+            result = self.env.cr.fetchone()
+            
+            if result and result[0]:
+                record.most_active_member_id = result[0]
+            else:
+                record.most_active_member_id = False
     
     @api.depends()
     def _compute_graph_data(self):
