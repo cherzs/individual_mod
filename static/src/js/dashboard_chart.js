@@ -15,26 +15,104 @@ class LibraryDashboardController {
         this.error = null;
         this.initialized = false;
         this._refreshing = false;
+        this._renderAttempts = 0;
+        this._initAttempts = 0;
+        this._loadAttempts = 0;
     }
     
     async init() {
         try {
             if (this.initialized) return;
             
+            // Limit maximum initialization attempts
+            const MAX_INIT_ATTEMPTS = 3;
+            
+            // Increment init attempts
+            this._initAttempts++;
+            
+            // Check if we've exceeded the maximum attempts
+            if (this._initAttempts > MAX_INIT_ATTEMPTS) {
+                console.error(`Exceeded maximum initialization attempts (${MAX_INIT_ATTEMPTS}). Aborting.`);
+                
+                // Display error message to user
+                const dashboardEl = document.querySelector('.o_dashboard_charts');
+                if (dashboardEl) {
+                    dashboardEl.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h4>Dashboard Initialization Error</h4>
+                            <p>Failed to initialize dashboard after multiple attempts.</p>
+                            <button class="btn btn-primary mt-2" onclick="location.reload()">Refresh Page</button>
+                        </div>
+                    `;
+                }
+                
+                // Reset attempt counter for next time
+                this._initAttempts = 0;
+                return;
+            }
+            
+            console.log(`Dashboard initialization attempt ${this._initAttempts} of ${MAX_INIT_ATTEMPTS}`);
+            console.log("Initializing dashboard charts...");
+            
             // Load Chart.js if not already loaded
-            await waitForChartJs();
+            await waitForChartJs().catch(e => {
+                console.error("Error loading Chart.js:", e);
+                throw new Error("Failed to load Chart.js library: " + e.message);
+            });
+            
+            // Verify Chart.js is actually available
+            if (typeof Chart === 'undefined') {
+                throw new Error("Chart.js was not properly loaded");
+            }
+            
+            console.log("Chart.js loaded successfully");
+            
+            // Initialize chart instances storage
+            this.chartInstances = {};
+            
+            // Clean up any existing charts
+            this.cleanupAllChartInstances();
             
             // Force full width on all parent containers
             this.forceFullWidth();
             
             // Inject chart template and initialize
             this.injectChartTemplate();
-            this.loadChartData();
+            
+            // Small delay to ensure DOM is fully ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Load chart data
+            await this.loadChartData();
             
             this.initialized = true;
+            this._initAttempts = 0; // Reset counter after successful initialization
+            console.log("Dashboard initialization complete");
         } catch (error) {
             console.error("Dashboard initialization error:", error);
             this.error = error.message || "Initialization failed";
+            
+            // Try again with a limit
+            if (this._initAttempts < MAX_INIT_ATTEMPTS) {
+                console.log(`Retrying dashboard initialization (attempt ${this._initAttempts} of ${MAX_INIT_ATTEMPTS})...`);
+                setTimeout(() => this.init(), 1000); // Longer delay for initialization retries
+                return;
+            }
+            
+            // Show error to user
+            const dashboardEl = document.querySelector('.o_dashboard_charts');
+            if (dashboardEl) {
+                dashboardEl.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>Dashboard Initialization Error</h4>
+                        <p>${error.message || "Failed to initialize dashboard"}</p>
+                        <button class="btn btn-primary mt-2" onclick="location.reload()">Refresh Page</button>
+                    </div>
+                `;
+            }
+            
+            // Reset for future attempts
+            this._initAttempts = 0;
         }
     }
     
@@ -170,7 +248,7 @@ class LibraryDashboardController {
         // Insert the chart HTML
         dashboardContainer.innerHTML = `
             <div class="o_dashboard_chart full-width" style="width:100%; max-width:100%;">
-                <div class="chart-actions text-center mt-4">
+                <div class="chart-actions text-center" style="margin-bottom:25px;">
                     <button class="btn btn-primary reload_charts_btn" onclick="if(window.reloadDashboard) window.reloadDashboard(); else if(window.refreshAllCharts) window.refreshAllCharts(); return false;">
                         <i class="fa fa-refresh mr-2"></i>Reload Charts
                     </button>
@@ -222,122 +300,285 @@ class LibraryDashboardController {
     }
     
     loadChartData() {
-        try {
-            // Find the dashboard element
-            const dashboardEl = document.querySelector('.o_dashboard_charts');
-            if (!dashboardEl) {
-                console.error("Dashboard element not found");
-                return;
-            }
-            
-            // Find the graph_data field in various ways Odoo might render it
-            let graphDataValue = null;
-            
-            // Priority 1: Look for the specific class we added to the field
-            const chartDataField = document.querySelector('.o_chart_data');
-            if (chartDataField) {
-                graphDataValue = chartDataField.value || chartDataField.textContent;
-                if (graphDataValue) {
-                    console.log("Found graph_data via o_chart_data class");
-                }
-            }
-            
-            // If not found, try other selectors
-            if (!graphDataValue) {
-                // Method 1: Try to find the invisible field (multiple ways Odoo might render it)
-                const graphDataSelectors = [
-                    'input[name="graph_data"]',
-                    'span[name="graph_data"]',
-                    'textarea[name="graph_data"]',
-                    '.o_field_text[name="graph_data"]',
-                    '.o_field_widget[name="graph_data"]',
-                    '[data-field="graph_data"]'
-                ];
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Limit maximum load attempts
+                const MAX_LOAD_ATTEMPTS = 3;
                 
-                for (const selector of graphDataSelectors) {
-                    const element = document.querySelector(selector);
-                    if (element) {
-                        graphDataValue = element.value || element.textContent;
-                        if (graphDataValue) {
-                            console.log(`Found graph_data via selector: ${selector}`);
-                            break;
-                        }
-                    }
+                // Increment load attempts
+                this._loadAttempts++;
+                
+                // Check if we've exceeded the maximum attempts
+                if (this._loadAttempts > MAX_LOAD_ATTEMPTS) {
+                    console.error(`Exceeded maximum chart data loading attempts (${MAX_LOAD_ATTEMPTS}). Aborting.`);
+                    this._loadAttempts = 0; // Reset for future attempts
+                    reject(new Error(`Failed to load chart data after ${MAX_LOAD_ATTEMPTS} attempts`));
+                    return;
                 }
-            }
-            
-            // Method 2: Look for data attribute on the form
-            if (!graphDataValue) {
-                const formView = document.querySelector('.o_form_view');
-                if (formView && formView.dataset.graphData) {
-                    graphDataValue = formView.dataset.graphData;
-                    console.log("Found graph_data via data attribute");
+                
+                console.log(`Chart data loading attempt ${this._loadAttempts} of ${MAX_LOAD_ATTEMPTS}`);
+                
+                // Find the dashboard element
+                const dashboardEl = document.querySelector('.o_dashboard_charts');
+                if (!dashboardEl) {
+                    console.error("Dashboard element not found");
+                    reject(new Error("Dashboard element not found"));
+                    return;
                 }
-            }
-            
-            // Method 3: Try to find it in the rendered view somewhere
-            if (!graphDataValue) {
-                // Look for any element containing JSON data
-                const jsonElements = document.querySelectorAll('*');
-                for (const el of jsonElements) {
-                    const content = el.textContent;
-                    if (content && content.includes('"loan_trend"') && content.includes('"book_categories"')) {
-                        try {
-                            // Try to extract a valid JSON string
-                            const jsonMatch = content.match(/(\{.*"loan_trend".*\})/);
-                            if (jsonMatch && jsonMatch[1]) {
-                                graphDataValue = jsonMatch[1];
-                                console.log("Found graph_data in DOM text content");
+                
+                // Try to fetch from the server - ALWAYS use server data
+                try {
+                    console.log("Fetching chart data from server");
+                    await this.fetchDataFromServer();
+                    this._loadAttempts = 0; // Reset counter after successful loading
+                    resolve();
+                    return; // Exit after successfully fetching from server
+                } catch (error) {
+                    console.error("Error fetching data from server:", error);
+                    
+                    // Attempt to find data in the DOM as fallback
+                    console.log("Attempting to find data in DOM as fallback");
+                    
+                    // Find the graph_data field in various ways Odoo might render it
+                    let graphDataValue = null;
+                    
+                    // Try all possible selectors for finding the data in the DOM
+                    const graphDataSelectors = [
+                        '.o_chart_data',
+                        'input[name="graph_data"]',
+                        'span[name="graph_data"]',
+                        'textarea[name="graph_data"]',
+                        '.o_field_text[name="graph_data"]',
+                        '.o_field_widget[name="graph_data"]',
+                        '[data-field="graph_data"]'
+                    ];
+                    
+                    for (const selector of graphDataSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element) {
+                            graphDataValue = element.value || element.textContent;
+                            if (graphDataValue) {
+                                console.log(`Found graph_data via selector: ${selector}`);
                                 break;
                             }
-                        } catch (e) {
-                            // Continue searching
                         }
                     }
+                    
+                    // If we found data in the DOM, use it
+                    if (graphDataValue) {
+                        try {
+                            this.chartData = JSON.parse(graphDataValue);
+                            console.log("Successfully parsed chart data from DOM");
+                            this._loadAttempts = 0; // Reset counter after successful loading
+                            setTimeout(() => {
+                                this.renderCharts();
+                                resolve();
+                            }, 300);
+                            return;
+                        } catch (parseError) {
+                            console.error("Error parsing JSON data from DOM:", parseError);
+                            // Continue to fallback data instead of rejecting
+                        }
+                    }
+                    
+                    // Last resort: Create dummy data so something displays
+                    // This prevents the dashboard from crashing completely
+                    console.warn("Using dummy data as fallback since API and DOM data are unavailable");
+                    this.chartData = this._createDummyChartData();
+                    
+                    // Show notification about using demo data
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-warning';
+                    notification.innerHTML = `
+                        <strong>Note:</strong> Using demonstration data. 
+                        The server endpoint '/library/dashboard/data' could not be reached.
+                        <button class="btn btn-sm btn-outline-primary float-right retry-fetch-btn">
+                            Retry Connection
+                        </button>
+                    `;
+                    dashboardEl.prepend(notification);
+                    
+                    // Add retry button functionality
+                    const retryBtn = notification.querySelector('.retry-fetch-btn');
+                    if (retryBtn) {
+                        retryBtn.addEventListener('click', () => {
+                            notification.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Retrying connection...';
+                            this.fetchDataFromServer()
+                                .then(() => {
+                                    notification.remove();
+                                })
+                                .catch(() => {
+                                    notification.innerHTML = `
+                                        <strong>Error:</strong> Still unable to connect to server.
+                                        <button class="btn btn-sm btn-outline-primary float-right retry-fetch-btn">
+                                            Retry Connection
+                                        </button>
+                                    `;
+                                    // Re-attach event listener to new button
+                                    const newRetryBtn = notification.querySelector('.retry-fetch-btn');
+                                    if (newRetryBtn) {
+                                        newRetryBtn.addEventListener('click', () => {
+                                            window.location.reload();
+                                        });
+                                    }
+                                });
+                        });
+                    }
+                    
+                    this._loadAttempts = 0; // Reset counter after fallback
+                    setTimeout(() => {
+                        this.renderCharts();
+                        resolve();
+                    }, 300);
+                    return;
                 }
-            }
-            
-            // Method 4: If the field is not in the DOM but we can find a model ID, fetch from server
-            if (!graphDataValue) {
-                // Find record ID from URL or element
-                const recordIdMatch = window.location.href.match(/\/(\d+)(?:\?|$)/);
-                const recordId = recordIdMatch ? recordIdMatch[1] : null;
+            } catch (error) {
+                console.error("Error loading chart data:", error);
+                this.error = error.message || "Failed to load chart data";
                 
-                if (recordId) {
-                    console.log(`Found record ID: ${recordId}, fetching data from server`);
-                    this.fetchDataFromServer();
-                    return; // Exit early as data will be loaded async
+                // Try again with a limit if there was an unexpected error
+                if (this._loadAttempts < MAX_LOAD_ATTEMPTS) {
+                    console.log(`Retrying chart data loading (attempt ${this._loadAttempts} of ${MAX_LOAD_ATTEMPTS})...`);
+                    setTimeout(() => {
+                        this.loadChartData()
+                            .then(resolve)
+                            .catch(reject);
+                    }, 800);
+                    return;
                 }
+                
+                // Give up and reset counter
+                this._loadAttempts = 0;
+                reject(error);
             }
-            
-            // Method 5: If we still can't find it, try the API endpoint
-            if (!graphDataValue) {
-                console.log("Attempting to fetch chart data from API endpoint");
-                this.fetchDataFromServer();
-                return; // Exit early as data will be loaded async
+        });
+    }
+    
+    // Create dummy chart data for fallback when server and DOM data are unavailable
+    _createDummyChartData() {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        
+        return {
+            loan_trend: {
+                labels: months,
+                datasets: [{
+                    label: 'Sample Book Loans',
+                    data: [12, 19, 15, 22, 18, 25],
+                    backgroundColor: 'rgba(26, 115, 232, 0.2)',
+                    borderColor: 'rgba(26, 115, 232, 0.8)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            book_categories: {
+                labels: ['Fiction', 'Science', 'History', 'Biography', 'Art'],
+                datasets: [{
+                    data: [30, 20, 15, 10, 25],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            book_acquisitions: {
+                labels: months,
+                datasets: [{
+                    label: 'Sample New Books',
+                    data: [5, 8, 12, 7, 10, 15],
+                    backgroundColor: 'rgba(66, 133, 244, 0.8)',
+                    borderColor: 'rgba(66, 133, 244, 1)',
+                    borderWidth: 1
+                }]
+            },
+            loan_status: {
+                labels: ['Active', 'Returned', 'Overdue', 'Lost'],
+                datasets: [{
+                    data: [45, 30, 15, 10],
+                    backgroundColor: [
+                        'rgba(52, 168, 83, 0.8)',
+                        'rgba(66, 133, 244, 0.8)',
+                        'rgba(251, 188, 5, 0.8)',
+                        'rgba(234, 67, 53, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 168, 83, 1)',
+                        'rgba(66, 133, 244, 1)',
+                        'rgba(251, 188, 5, 1)',
+                        'rgba(234, 67, 53, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            member_activities: {
+                labels: ['Loans', 'Returns', 'Overdue', 'Active Members', 'New Members'],
+                datasets: [
+                    {
+                        label: 'Standard Members',
+                        data: [65, 59, 20, 40, 10],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)'
+                    },
+                    {
+                        label: 'Premium Members',
+                        data: [28, 25, 8, 15, 5],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)'
+                    }
+                ]
+            },
+            book_condition: {
+                labels: ['New', 'Good', 'Fair', 'Poor', 'Damaged'],
+                datasets: [{
+                    data: [35, 25, 20, 15, 5],
+                    backgroundColor: [
+                        'rgba(52, 168, 83, 0.8)',
+                        'rgba(66, 133, 244, 0.8)',
+                        'rgba(251, 188, 5, 0.8)',
+                        'rgba(234, 67, 53, 0.8)',
+                        'rgba(0, 0, 0, 0.5)'
+                    ]
+                }]
+            },
+            revenue: {
+                labels: months,
+                datasets: [{
+                    label: 'Sample Revenue ($)',
+                    data: [125, 150, 175, 200, 220, 250],
+                    backgroundColor: 'rgba(0, 184, 169, 0.8)',
+                    borderColor: 'rgba(0, 184, 169, 1)',
+                    borderWidth: 1
+                }]
+            },
+            reading_times: {
+                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                datasets: [
+                    {
+                        label: 'Weekday Borrows',
+                        data: [12, 15, 18, 14, 16, 0, 0],
+                        backgroundColor: 'rgba(103, 58, 183, 0.8)',
+                        borderColor: 'rgba(103, 58, 183, 1)'
+                    },
+                    {
+                        label: 'Weekend Borrows',
+                        data: [0, 0, 0, 0, 0, 25, 30],
+                        backgroundColor: 'rgba(186, 104, 200, 0.8)',
+                        borderColor: 'rgba(186, 104, 200, 1)'
+                    }
+                ]
             }
-            
-            if (!graphDataValue) {
-                console.error("No chart data found bro");
-                return;
-            }
-            
-            try {
-                this.chartData = JSON.parse(graphDataValue);
-                console.log("Successfully parsed chart data");
-            } catch (parseError) {
-                console.error("Error parsing JSON data:", parseError);
-                return;
-            }
-            
-            // Add a small delay to ensure the DOM is ready
-            setTimeout(() => {
-                this.renderCharts();
-            }, 300);
-        } catch (error) {
-            console.error("Error loading chart data:", error);
-            this.error = error.message || "Failed to load chart data";
-        }
+        };
     }
     
     // New method to fetch data from the API endpoint
@@ -345,233 +586,178 @@ class LibraryDashboardController {
         console.log("Fetching dashboard data from server API...");
         
         return new Promise((resolve, reject) => {
-            // Try to fetch from Odoo controller endpoint
-            fetch('/library/dashboard/data')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log("Successfully fetched data from API");
-                    if (data && data.data) {
-                        this.chartData = data.data;
+            // Use Odoo's built-in RPC call mechanism to fetch data from backend
+            const fetchData = async () => {
+                try {
+                    // Try to use Odoo's RPC mechanism
+                    let result;
+                    
+                    if (window.odoo && window.odoo.rpc) {
+                        // Odoo 14+ RPC mechanism
+                        console.log("Using Odoo RPC mechanism to fetch data");
+                        result = await window.odoo.rpc({
+                            route: '/library/dashboard/data',
+                            params: {}
+                        });
+                    } else if (window.rpc) {
+                        // Alternative RPC mechanism
+                        console.log("Using window.rpc to fetch data");
+                        result = await window.rpc('/library/dashboard/data', {});
                     } else {
-                        console.warn("API response did not contain expected data structure");
-                        this.chartData = this.getSampleChartData();
+                        // Fallback to jQuery AJAX for older Odoo versions
+                        console.log("Using jQuery AJAX to fetch data");
+                        result = await new Promise((resolve, reject) => {
+                            $.ajax({
+                                url: '/library/dashboard/data',
+                                type: 'POST',
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    jsonrpc: "2.0",
+                                    method: "call",
+                                    params: {},
+                                    id: new Date().getTime()
+                                }),
+                                success: function(response) {
+                                    if (response.error) {
+                                        reject(response.error);
+                                    } else {
+                                        resolve(response.result);
+                                    }
+                                },
+                                error: function(jqXHR, textStatus, errorThrown) {
+                                    reject(errorThrown || textStatus);
+                                }
+                            });
+                        });
                     }
                     
-                    // Render charts after a small delay
-                    setTimeout(() => {
-                        this.renderCharts();
-                        resolve();
-                    }, 300);
-                })
-                .catch(error => {
-                    console.error("Error fetching chart data from API:", error);
+                    console.log("Successfully received backend data:", result);
                     
-                    // Still attempt to use hardcoded sample data as fallback
-                    console.log("Using sample chart data as fallback");
-                    this.chartData = this.getSampleChartData();
-                    
-                    setTimeout(() => {
-                        this.renderCharts();
-                        resolve(); // Still resolve, as we're using fallback data
-                    }, 300);
-                });
+                    if (result && result.status === 'success' && result.data) {
+                        this.chartData = result.data;
+                        
+                        // Render charts after a small delay
+                        setTimeout(() => {
+                            this.renderCharts();
+                            resolve();
+                        }, 300);
+                    } else if (result && result.data) {
+                        // Direct data format
+                        this.chartData = result.data;
+                        setTimeout(() => {
+                            this.renderCharts();
+                            resolve();
+                        }, 300);
+                    } else {
+                        console.error("Invalid response format from backend:", result);
+                        reject(new Error("Invalid data format received from server"));
+                    }
+                } catch (error) {
+                    console.error("Error fetching chart data from backend:", error);
+                    reject(error);
+                }
+            };
+            
+            // Execute the fetch
+            fetchData().catch(error => {
+                console.error("Failed to fetch dashboard data:", error);
+                reject(error);
+            });
         });
     }
     
-    // Extract sample data to a separate method for reuse
-    getSampleChartData() {
-        return {
-            // 1. Line chart for loan trends
-            'loan_trend': {
-                'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                'datasets': [{
-                    'label': 'Loans',
-                    'data': [12, 19, 3, 5, 2, 3],
-                    'backgroundColor': 'rgba(75, 192, 192, 0.2)',
-                    'borderColor': 'rgba(75, 192, 192, 1)',
-                    'borderWidth': 2,
-                    'tension': 0.1
-                }]
-            },
-            
-            // 2. Pie chart for book categories
-            'book_categories': {
-                'labels': ['Fiction', 'Non-Fiction', 'Sci-Fi', 'Biography', 'History'],
-                'datasets': [{
-                    'data': [30, 20, 15, 25, 10],
-                    'backgroundColor': [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                    ],
-                    'borderColor': 'rgba(255, 255, 255, 1)',
-                    'borderWidth': 1
-                }]
-            },
-            
-            // 3. Bar chart for monthly book acquisitions
-            'book_acquisitions': {
-                'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                'datasets': [{
-                    'label': 'New Books',
-                    'data': [5, 7, 10, 3, 8, 12],
-                    'backgroundColor': 'rgba(54, 162, 235, 0.7)',
-                    'borderColor': 'rgba(54, 162, 235, 1)',
-                    'borderWidth': 1
-                }]
-            },
-            
-            // 4. Doughnut chart for loan status
-            'loan_status': {
-                'labels': ['Active', 'Returned', 'Overdue', 'Lost'],
-                'datasets': [{
-                    'data': [45, 30, 15, 10],
-                    'backgroundColor': [
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(255, 99, 132, 0.7)'
-                    ],
-                    'borderColor': 'rgba(255, 255, 255, 1)',
-                    'borderWidth': 1,
-                    'hoverOffset': 4
-                }]
-            },
-            
-            // 5. Radar chart for member activities
-            'member_activities': {
-                'labels': ['Loans', 'Returns', 'Renewals', 'Reservations', 'Visits'],
-                'datasets': [{
-                    'label': 'Regular Members',
-                    'data': [65, 59, 90, 81, 56],
-                    'fill': true,
-                    'backgroundColor': 'rgba(54, 162, 235, 0.2)',
-                    'borderColor': 'rgba(54, 162, 235, 1)',
-                    'pointBackgroundColor': 'rgba(54, 162, 235, 1)',
-                    'pointBorderColor': '#fff',
-                    'pointHoverBackgroundColor': '#fff',
-                    'pointHoverBorderColor': 'rgba(54, 162, 235, 1)'
-                }, {
-                    'label': 'Premium Members',
-                    'data': [28, 48, 40, 19, 96],
-                    'fill': true,
-                    'backgroundColor': 'rgba(255, 99, 132, 0.2)',
-                    'borderColor': 'rgba(255, 99, 132, 1)',
-                    'pointBackgroundColor': 'rgba(255, 99, 132, 1)',
-                    'pointBorderColor': '#fff',
-                    'pointHoverBackgroundColor': '#fff',
-                    'pointHoverBorderColor': 'rgba(255, 99, 132, 1)'
-                }]
-            },
-            
-            // 6. Polar area chart for book condition
-            'book_condition': {
-                'labels': ['New', 'Good', 'Fair', 'Poor', 'Damaged'],
-                'datasets': [{
-                    'data': [11, 16, 7, 3, 2],
-                    'backgroundColor': [
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(255, 99, 132, 0.7)'
-                    ],
-                    'borderWidth': 1
-                }]
-            }
-        };
-    }
-    
     renderCharts() {
-        // Ensure full width is applied
-        this.forceFullWidth();
-        
-        // Check if Chart.js is available
-        if (typeof Chart === 'undefined') {
-            console.error("Chart.js is not available!");
-            document.querySelectorAll('.o_dashboard_charts').forEach(el => {
-                el.innerHTML = `
-                    <div class="alert alert-danger">
-                        <p>Chart.js library could not be loaded. Please refresh the page.</p>
-                        <button class="btn btn-primary" onclick="location.reload()">Refresh Page</button>
-                    </div>
-                `;
-            });
-            return;
-        }
-        
-        // Log the data for debugging
-        console.log("Rendering charts with data:", this.chartData);
-        
-        // Destroy existing charts to prevent duplicates
-        if (this.chartInstances) {
-            Object.values(this.chartInstances).forEach(chart => {
-                if (chart && typeof chart.destroy === 'function') {
-                    chart.destroy();
-                }
-            });
-            this.chartInstances = {};
-        }
-        
-        // Add a manual button to reload charts
-        const dashboardEl = document.querySelector('.o_dashboard_charts');
-        if (dashboardEl && !document.querySelector('.reload_charts_btn')) {
-            const reloadBtn = document.createElement('button');
-            reloadBtn.className = 'btn btn-secondary reload_charts_btn';
-            reloadBtn.textContent = 'Reload Charts';
-            reloadBtn.style.marginBottom = '15px';
-            reloadBtn.onclick = () => this.refreshAllCharts();
-            dashboardEl.prepend(reloadBtn);
-        }
-        
         try {
-            // If data is available, render the charts
-            if (this.chartData) {
-                this.renderChartWithFallback('loan_trend', this.renderLoanTrendsChart.bind(this));
-                this.renderChartWithFallback('book_categories', this.renderCategoriesChart.bind(this));
-                this.renderChartWithFallback('book_acquisitions', this.renderAcquisitionsChart.bind(this));
-                this.renderChartWithFallback('loan_status', this.renderLoanStatusChart.bind(this));
-                this.renderChartWithFallback('member_activities', this.renderMemberActivitiesChart.bind(this));
-                this.renderChartWithFallback('book_condition', this.renderBookConditionChart.bind(this));
-                this.renderChartWithFallback('revenue', this.renderRevenueChart.bind(this));
-                this.renderChartWithFallback('reading_times', this.renderReadingTimesChart.bind(this));
+            // Use retry counter to prevent infinite loops
+            if (!this._renderAttempts) {
+                this._renderAttempts = 0;
+            }
+            
+            // Limit maximum render attempts to 3
+            const MAX_RENDER_ATTEMPTS = 3;
+            
+            // Increment render attempts
+            this._renderAttempts++;
+            
+            // Check if we've exceeded the maximum attempts
+            if (this._renderAttempts > MAX_RENDER_ATTEMPTS) {
+                console.error(`Exceeded maximum chart rendering attempts (${MAX_RENDER_ATTEMPTS}). Aborting.`);
                 
-                // Add resize listener for responsive charts
-                if (!this._resizeListenerAdded) {
-                    window.addEventListener('resize', this.handleResize.bind(this));
-                    this._resizeListenerAdded = true;
+                // Display error message to user
+                const dashboardEl = document.querySelector('.o_dashboard_charts');
+                if (dashboardEl) {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'alert alert-danger mt-3';
+                    errorMsg.innerHTML = `
+                        <strong>Chart Rendering Error</strong>
+                        <p>Failed to render charts after multiple attempts. Please try refreshing the page.</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="window.location.reload()">Refresh Page</button>
+                    `;
+                    dashboardEl.prepend(errorMsg);
                 }
                 
-                console.log("All charts rendered successfully");
-            } else {
-                console.error("No chart data available");
-                document.querySelectorAll('.chart_section canvas').forEach(canvas => {
-                    const section = canvas.closest('.chart_section');
-                    if (section) {
-                        section.innerHTML += `
-                            <div class="chart-error mt-3">
-                                <p>No data available for this chart</p>
-                            </div>
-                        `;
-                    }
-                });
+                // Reset attempt counter for next time
+                this._renderAttempts = 0;
+                return;
             }
+            
+            // Log the current attempt
+            console.log(`Chart rendering attempt ${this._renderAttempts} of ${MAX_RENDER_ATTEMPTS}`);
+            
+            // Clear any previous renderings (but don't clear chartData)
+            this.dashboardData = null;
+            this.cleanupAllChartInstances();
+            
+            // Check if we have chart data
+            if (!this.chartData) {
+                console.error("Failed to load dashboard data");
+                return;
+            }
+            
+            console.log("Rendering charts with data:", this.chartData);
+            
+            // Render all charts with their respective render functions
+            this.renderChartWithFallback('loan_trend', this.renderLoanTrendsChart.bind(this));
+            this.renderChartWithFallback('book_categories', this.renderCategoriesChart.bind(this));
+            this.renderChartWithFallback('book_acquisitions', this.renderAcquisitionsChart.bind(this));
+            this.renderChartWithFallback('loan_status', this.renderLoanStatusChart.bind(this));
+            this.renderChartWithFallback('member_activities', this.renderMemberActivitiesChart.bind(this));
+            this.renderChartWithFallback('book_condition', this.renderBookConditionChart.bind(this));
+            // Use 'revenue' key to match the backend data structure
+            this.renderChartWithFallback('revenue', this.renderRevenueChart.bind(this));
+            this.renderChartWithFallback('reading_times', this.renderReadingTimesChart.bind(this));
+            
+            // Setup resize handler
+            this.handleResize();
+            
+            // Reset the attempts counter after successful rendering
+            this._renderAttempts = 0;
+            
         } catch (error) {
             console.error("Error rendering charts:", error);
-            document.querySelectorAll('.o_dashboard_charts').forEach(el => {
-                el.innerHTML += `
-                    <div class="alert alert-danger">
-                        <p>Error rendering charts: ${error.message}</p>
-                    </div>
-                `;
-            });
+            
+            // If there was an error, wait a moment and try again (with limit)
+            if (this._renderAttempts < MAX_RENDER_ATTEMPTS) {
+                console.log(`Retrying chart rendering (attempt ${this._renderAttempts} of ${MAX_RENDER_ATTEMPTS})...`);
+                setTimeout(() => this.renderCharts(), 500);
+            } else {
+                console.error(`Giving up after ${MAX_RENDER_ATTEMPTS} failed rendering attempts`);
+                this._renderAttempts = 0; // Reset for future attempts
+                
+                // Show error to user
+                const dashboardEl = document.querySelector('.o_dashboard_charts');
+                if (dashboardEl) {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'alert alert-danger mt-3';
+                    errorMsg.innerHTML = `
+                        <strong>Chart Rendering Error</strong>
+                        <p>${error.message || 'Unknown error rendering charts'}</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="window.location.reload()">Refresh Page</button>
+                    `;
+                    dashboardEl.prepend(errorMsg);
+                }
+            }
         }
     }
     
@@ -584,43 +770,23 @@ class LibraryDashboardController {
             if (data) {
                 renderFunction(data);
             } else {
-                // Generate fallback data if real data is not available
-                console.log(`Data for ${chartKey} not found, using sample data`);
-                let sampleData;
+                console.warn(`Data for ${chartKey} not found. Check LibraryDashboard.py for missing chart data.`);
                 
-                // Get sample data based on chart type
-                switch (chartKey) {
-                    case 'loan_trend':
-                        sampleData = this.generateLoan_trendData();
-                        break;
-                    case 'book_categories':
-                        sampleData = this.generateBook_categoriesData();
-                        break;
-                    case 'book_acquisitions':
-                        sampleData = this.generateBook_acquisitionsData();
-                        break;
-                    case 'loan_status':
-                        sampleData = this.generateLoan_statusData();
-                        break;
-                    case 'member_activities':
-                        sampleData = this.generateMember_activitiesData();
-                        break;
-                    case 'book_condition':
-                        sampleData = this.generateBook_conditionData();
-                        break;
-                    case 'revenue':
-                        sampleData = this.generateRevenueData();
-                        break;
-                    case 'reading_times':
-                        sampleData = this.generateReadingTimesData();
-                        break;
-                    default:
-                        console.error(`No sample data generator for ${chartKey}`);
-                        return;
+                // Display a message in the chart area
+                const canvasId = this.getCanvasIdForChart(chartKey);
+                if (canvasId) {
+                    const canvas = document.getElementById(canvasId);
+                    if (canvas) {
+                        const section = canvas.closest('.chart_section');
+                        if (section) {
+                            section.innerHTML += `
+                                <div class="chart-error mt-3">
+                                    <p>No data available for this chart</p>
+                                </div>
+                            `;
+                        }
+                    }
                 }
-                
-                // Render with sample data
-                renderFunction(sampleData);
             }
         } catch (error) {
             console.error(`Error rendering ${chartKey} chart:`, error);
@@ -675,179 +841,6 @@ class LibraryDashboardController {
         }
     }
     
-    // Add sample data generator methods
-    generateLoan_trendData() {
-        return {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Book Loans',
-                data: [12, 19, 3, 5, 2, 3],
-                backgroundColor: 'rgba(26, 115, 232, 0.2)',
-                borderColor: 'rgba(26, 115, 232, 0.8)',
-                borderWidth: 2,
-                tension: 0.4,
-                pointBackgroundColor: 'rgba(26, 115, 232, 1)',
-                pointBorderColor: '#fff',
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                fill: true
-            }]
-        };
-    }
-    
-    generateBook_categoriesData() {
-        return {
-            labels: ['Fiction', 'Non-Fiction', 'Sci-Fi', 'Biography', 'History'],
-            datasets: [{
-                data: [35, 25, 15, 15, 10],
-                backgroundColor: [
-                    'rgba(26, 115, 232, 0.8)',
-                    'rgba(52, 168, 83, 0.8)',
-                    'rgba(251, 188, 5, 0.8)',
-                    'rgba(241, 108, 119, 0.8)',
-                    'rgba(103, 58, 183, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(26, 115, 232, 1)',
-                    'rgba(52, 168, 83, 1)',
-                    'rgba(251, 188, 5, 1)',
-                    'rgba(241, 108, 119, 1)',
-                    'rgba(103, 58, 183, 1)'
-                ],
-                borderWidth: 1,
-                hoverOffset: 4
-            }]
-        };
-    }
-    
-    generateBook_acquisitionsData() {
-        return {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'New Books',
-                data: [5, 7, 10, 8, 12, 15],
-                backgroundColor: 'rgba(66, 133, 244, 0.8)',
-                borderColor: 'rgba(66, 133, 244, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
-                barThickness: 25,
-                maxBarThickness: 35
-            }]
-        };
-    }
-    
-    generateLoan_statusData() {
-        return {
-            labels: ['Active', 'Returned', 'Overdue'],
-            datasets: [{
-                data: [65, 25, 10],
-                backgroundColor: [
-                    'rgba(52, 168, 83, 0.8)',
-                    'rgba(251, 188, 5, 0.8)',
-                    'rgba(234, 67, 53, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(52, 168, 83, 1)',
-                    'rgba(251, 188, 5, 1)',
-                    'rgba(234, 67, 53, 1)'
-                ],
-                borderWidth: 1,
-                hoverOffset: 4,
-                cutout: '60%'
-            }]
-        };
-    }
-    
-    generateMember_activitiesData() {
-        return {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [
-                {
-                    label: 'New Members',
-                    data: [5, 8, 6, 9, 12, 8],
-                    backgroundColor: 'rgba(26, 115, 232, 0.8)',
-                    borderColor: 'rgba(26, 115, 232, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barThickness: 15,
-                    maxBarThickness: 20
-                },
-                {
-                    label: 'Active Members',
-                    data: [15, 20, 18, 22, 28, 32],
-                    backgroundColor: 'rgba(255, 138, 101, 0.8)',
-                    borderColor: 'rgba(255, 138, 101, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barThickness: 15,
-                    maxBarThickness: 20
-                }
-            ]
-        };
-    }
-    
-    generateBook_conditionData() {
-        return {
-            labels: ['Excellent', 'Good', 'Fair', 'Poor', 'Damaged'],
-            datasets: [{
-                data: [45, 25, 15, 10, 5],
-                backgroundColor: [
-                    'rgba(52, 168, 83, 0.8)',
-                    'rgba(0, 158, 224, 0.8)',
-                    'rgba(255, 138, 101, 0.8)',
-                    'rgba(103, 58, 183, 0.8)',
-                    'rgba(251, 188, 5, 0.8)'
-                ],
-                borderColor: 'rgba(255, 255, 255, 0.5)',
-                borderWidth: 2
-            }]
-        };
-    }
-    
-    generateRevenueData() {
-        return {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Revenue ($)',
-                data: [1200, 1900, 1500, 2200, 1800, 2500],
-                backgroundColor: 'rgba(0, 184, 169, 0.8)',
-                borderColor: 'rgba(0, 184, 169, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
-                barThickness: 25,
-                maxBarThickness: 35
-            }]
-        };
-    }
-    
-    generateReadingTimesData() {
-        return {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [
-                {
-                    label: 'Weekday Reading Hours',
-                    data: [3.5, 4.2, 3.8, 5.1, 4.3, 0, 0],
-                    backgroundColor: 'rgba(103, 58, 183, 0.8)',
-                    borderColor: 'rgba(103, 58, 183, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barThickness: 15,
-                    maxBarThickness: 20
-                },
-                {
-                    label: 'Weekend Reading Hours',
-                    data: [0, 0, 0, 0, 0, 7.5, 8.2],
-                    backgroundColor: 'rgba(186, 104, 200, 0.8)',
-                    borderColor: 'rgba(186, 104, 200, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barThickness: 15,
-                    maxBarThickness: 20
-                }
-            ]
-        };
-    }
-    
     // Handle window resize to adjust charts
     handleResize() {
         if (this.resizeTimeout) {
@@ -855,9 +848,37 @@ class LibraryDashboardController {
         }
         
         this.resizeTimeout = setTimeout(() => {
-            Object.values(this.chartInstances).forEach(chart => {
-                if (chart) chart.resize();
-            });
+            // Only try to resize charts that are still valid
+            if (this.chartInstances) {
+                Object.entries(this.chartInstances).forEach(([id, chart]) => {
+                    try {
+                        // Check if chart instance exists and is valid
+                        if (!chart || typeof chart.resize !== 'function') {
+                            return;
+                        }
+                        
+                        // Verify the chart's canvas is still in the DOM
+                        const canvas = chart.canvas;
+                        if (!canvas || !document.body.contains(canvas)) {
+                            console.warn(`Chart canvas for ${id} is no longer in the DOM, cannot resize`);
+                            return;
+                        }
+                        
+                        // Make sure canvas has valid dimensions
+                        if (canvas.offsetWidth <= 0 || canvas.offsetHeight <= 0) {
+                            console.warn(`Chart canvas for ${id} has zero dimensions, cannot resize`);
+                            return;
+                        }
+                        
+                        // If we got this far, the chart should be safe to resize
+                        chart.resize();
+                    } catch (error) {
+                        console.warn(`Error resizing chart ${id}:`, error);
+                        // Remove reference to problematic chart to prevent future errors
+                        delete this.chartInstances[id];
+                    }
+                });
+            }
         }, 200);
     }
     
@@ -1534,48 +1555,150 @@ class LibraryDashboardController {
         // Clear chart data to force reload
         this.chartData = null;
         
-        // Re-fetch chart data
-        this.fetchDataFromServer()
-            .then(() => {
-                // Remove loading indicator
-                const indicator = document.querySelector('.refresh-indicator');
-                if (indicator) indicator.remove();
+        // Use the refresh endpoint to force backend recalculation
+        const refreshData = async () => {
+            try {
+                // Try to use Odoo's RPC mechanism to call the refresh endpoint
+                let result;
                 
-                // Update button state
-                const reloadBtn = document.querySelector('.reload_charts_btn');
-                if (reloadBtn) {
-                    reloadBtn.disabled = false;
-                    reloadBtn.textContent = 'Reload Charts';
+                if (window.odoo && window.odoo.rpc) {
+                    // Odoo 14+ RPC mechanism
+                    console.log("Using Odoo RPC mechanism to refresh data");
+                    result = await window.odoo.rpc({
+                        route: '/library/dashboard/refresh',
+                        params: {}
+                    });
+                } else if (window.rpc) {
+                    // Alternative RPC mechanism
+                    console.log("Using window.rpc to refresh data");
+                    result = await window.rpc('/library/dashboard/refresh', {});
+                } else {
+                    // Fallback to jQuery AJAX for older Odoo versions
+                    console.log("Using jQuery AJAX to refresh data");
+                    result = await new Promise((resolve, reject) => {
+                        $.ajax({
+                            url: '/library/dashboard/refresh',
+                            type: 'POST',
+                            dataType: 'json',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                jsonrpc: "2.0",
+                                method: "call",
+                                params: {},
+                                id: new Date().getTime()
+                            }),
+                            success: function(response) {
+                                if (response.error) {
+                                    reject(response.error);
+                                } else {
+                                    resolve(response.result);
+                                }
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                reject(errorThrown || textStatus);
+                            }
+                        });
+                    });
                 }
                 
-                this._refreshing = false;
-            })
-            .catch(error => {
-                console.error("Error refreshing charts:", error);
+                console.log("Successfully refreshed data:", result);
                 
-                // Remove loading indicator
-                const indicator = document.querySelector('.refresh-indicator');
-                if (indicator) indicator.remove();
-                
-                // Update button state and show error
-                const reloadBtn = document.querySelector('.reload_charts_btn');
-                if (reloadBtn) {
-                    reloadBtn.disabled = false;
-                    reloadBtn.textContent = 'Retry Refresh';
+                if (result && result.status === 'success' && result.data) {
+                    this.chartData = result.data;
+                    
+                    // Remove loading indicator
+                    const indicator = document.querySelector('.refresh-indicator');
+                    if (indicator) indicator.remove();
+                    
+                    // Update button state
+                    const reloadBtn = document.querySelector('.reload_charts_btn');
+                    if (reloadBtn) {
+                        reloadBtn.disabled = false;
+                        reloadBtn.textContent = 'Reload Charts';
+                    }
+                    
+                    // Render the charts with fresh data
+                    setTimeout(() => {
+                        this.renderCharts();
+                        this._refreshing = false;
+                    }, 300);
+                    
+                    return;
+                } else if (result && result.data) {
+                    // Direct data format
+                    this.chartData = result.data;
+                    
+                    // Remove loading indicator
+                    const indicator = document.querySelector('.refresh-indicator');
+                    if (indicator) indicator.remove();
+                    
+                    // Update button state
+                    const reloadBtn = document.querySelector('.reload_charts_btn');
+                    if (reloadBtn) {
+                        reloadBtn.disabled = false;
+                        reloadBtn.textContent = 'Reload Charts';
+                    }
+                    
+                    // Render the charts with fresh data
+                    setTimeout(() => {
+                        this.renderCharts();
+                        this._refreshing = false;
+                    }, 300);
+                    
+                    return;
+                } else {
+                    throw new Error("Invalid response format from backend");
                 }
+            } catch (error) {
+                console.error("Error refreshing data:", error);
                 
-                // Show error message
-                const dashboardEl = document.querySelector('.o_dashboard_charts');
-                if (dashboardEl) {
-                    dashboardEl.innerHTML += `
-                        <div class="alert alert-danger">
-                            <p>Error refreshing charts: ${error.message}</p>
-                        </div>
-                    `;
-                }
-                
-                this._refreshing = false;
-            });
+                // Fallback to regular fetch if refresh fails
+                this.fetchDataFromServer()
+                    .then(() => {
+                        // Remove loading indicator
+                        const indicator = document.querySelector('.refresh-indicator');
+                        if (indicator) indicator.remove();
+                        
+                        // Update button state
+                        const reloadBtn = document.querySelector('.reload_charts_btn');
+                        if (reloadBtn) {
+                            reloadBtn.disabled = false;
+                            reloadBtn.textContent = 'Reload Charts';
+                        }
+                        
+                        this._refreshing = false;
+                    })
+                    .catch(fetchError => {
+                        console.error("Error fetching chart data after refresh failed:", fetchError);
+                        
+                        // Remove loading indicator
+                        const indicator = document.querySelector('.refresh-indicator');
+                        if (indicator) indicator.remove();
+                        
+                        // Update button state and show error
+                        const reloadBtn = document.querySelector('.reload_charts_btn');
+                        if (reloadBtn) {
+                            reloadBtn.disabled = false;
+                            reloadBtn.textContent = 'Retry Refresh';
+                        }
+                        
+                        // Show error message
+                        const dashboardEl = document.querySelector('.o_dashboard_charts');
+                        if (dashboardEl) {
+                            dashboardEl.innerHTML += `
+                                <div class="alert alert-danger">
+                                    <p>Error refreshing charts: ${error.message}</p>
+                                </div>
+                            `;
+                        }
+                        
+                        this._refreshing = false;
+                    });
+            }
+        };
+        
+        // Execute the refresh
+        refreshData();
     }
     
     // New method to thoroughly clean up all chart instances
@@ -1636,6 +1759,35 @@ class LibraryDashboardController {
 // Make LibraryDashboardController available globally
 window.LibraryDashboardController = LibraryDashboardController;
 
+// Patch Chart.js resize to prevent getComputedStyle errors
+function patchChartJsResize() {
+    if (typeof Chart !== 'undefined' && Chart.prototype) {
+        const originalResize = Chart.prototype.resize;
+        
+        Chart.prototype.resize = function() {
+            try {
+                // Check if canvas is valid before resizing
+                if (!this.canvas || !document.body.contains(this.canvas)) {
+                    console.warn('Attempted to resize a chart with invalid canvas, skipping resize');
+                    return;
+                }
+                
+                // Only call original resize if canvas has dimensions
+                if (this.canvas.offsetWidth > 0 && this.canvas.offsetHeight > 0) {
+                    return originalResize.apply(this, arguments);
+                } else {
+                    console.warn('Canvas has no dimensions, skipping resize');
+                }
+            } catch (e) {
+                console.warn('Error in patched resize method:', e);
+                // Do nothing, just prevent error from bubbling up
+            }
+        };
+        
+        console.log('Successfully patched Chart.js resize method');
+    }
+}
+
 // Initialize the dashboard charts
 function initDashboard() {
     const dashboardController = new LibraryDashboardController();
@@ -1651,12 +1803,26 @@ function initDashboard() {
         // Add a cleanup handler for window unload
         window.addEventListener('beforeunload', () => {
             console.log("Cleaning up chart instances before page unload");
-            // Destroy all charts to prevent memory leaks
-            Object.values(dashboardController.chartInstances).forEach(chart => {
-                if (chart instanceof Chart) {
-                    chart.destroy();
-                }
-            });
+            // Safely destroy all charts to prevent memory leaks
+            if (dashboardController.chartInstances) {
+                Object.entries(dashboardController.chartInstances).forEach(([id, chart]) => {
+                    try {
+                        if (chart && typeof chart.destroy === 'function') {
+                            chart.destroy();
+                        }
+                    } catch (e) {
+                        console.warn(`Error destroying chart ${id} during unload:`, e);
+                    }
+                });
+            }
+        });
+        
+        // Also clean up on view changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                console.log("Page hidden, cleaning up charts");
+                dashboardController.cleanupAllChartInstances();
+            }
         });
         
         return;
@@ -1701,6 +1867,7 @@ function initDashboard() {
             clearInterval(checkInterval);
             console.log("Dashboard element found on attempt " + checkCount + ", initializing charts...");
             dashboardController.init();
+            window.currentDashboardController = dashboardController;
         } else if (checkCount >= 20) {
             clearInterval(checkInterval);
             console.warn("Gave up looking for dashboard element after 20 attempts");
@@ -1713,32 +1880,67 @@ function initDashboard() {
     }, 10000);
 }
 
-// Initialize on both DOM content loaded and when view changes (Odoo specific)
-document.addEventListener('DOMContentLoaded', initDashboard);
+// Store the current controller globally for access in events
+window.currentDashboardController = null;
 
-// Try to detect Odoo view switches (this is Odoo 15+ specific)
-const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-        if (mutation.addedNodes && mutation.addedNodes.length) {
-            for (const node of mutation.addedNodes) {
-                if (node.classList && 
-                    (node.classList.contains('o_form_view') || 
-                     node.classList.contains('o_content') ||
-                     node.querySelector('.o_dashboard_charts'))) {
-                    console.log("View change detected, checking for dashboard...");
-                    setTimeout(initDashboard, 500);
-                    break;
+// Initialize on both DOM content loaded and when view changes (Odoo specific)
+document.addEventListener('DOMContentLoaded', () => {
+    // Apply Chart.js patch
+    patchChartJsResize();
+    
+    // Initialize dashboard
+    initDashboard();
+    
+    // Set up observer for view changes
+    const targetNode = document.body;
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.addedNodes && mutation.addedNodes.length) {
+                for (const node of mutation.addedNodes) {
+                    if (node.classList && 
+                        (node.classList.contains('o_form_view') || 
+                         node.classList.contains('o_content') ||
+                         node.querySelector('.o_dashboard_charts'))) {
+                        console.log("View change detected, checking for dashboard...");
+                        
+                        // Clean up any existing dashboard before initializing a new one
+                        if (window.currentDashboardController) {
+                            try {
+                                window.currentDashboardController.cleanupAllChartInstances();
+                            } catch (e) {
+                                console.warn("Error cleaning up previous dashboard:", e);
+                            }
+                        }
+                        
+                        // Initialize with a delay to ensure DOM is ready
+                        setTimeout(() => {
+                            const dashboardController = new LibraryDashboardController();
+                            window.currentDashboardController = dashboardController;
+                            dashboardController.init();
+                        }, 500);
+                        break;
+                    }
                 }
             }
         }
-    }
-});
-
-// Start observing once DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    const targetNode = document.body;
+    });
+    
     observer.observe(targetNode, { childList: true, subtree: true });
 });
 
-// Export for testing
+// Add a global reload function for the button
+window.refreshAllCharts = function() {
+    if (window.currentDashboardController) {
+        window.currentDashboardController.refreshAllCharts();
+    } else {
+        console.warn("No active dashboard controller found, creating new one");
+        const dashboardController = new LibraryDashboardController();
+        window.currentDashboardController = dashboardController;
+        dashboardController.init().then(() => {
+            dashboardController.refreshAllCharts();
+        });
+    }
+};
+
+// Export for testing and global access
 window.initLibraryDashboard = initDashboard; 

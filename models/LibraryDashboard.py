@@ -2,6 +2,7 @@
 from odoo import models, fields, api, _
 import json
 import logging
+from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
 
@@ -92,169 +93,444 @@ class LibraryDashboard(models.Model):
     def _compute_graph_data(self):
         for record in self:
             try:
-                # Generate chart data for the dashboard
+                # Generate chart data using real data from models
+                
+                # 1. Loan Trends - Monthly loans for the last 6 months
+                loan_data = self._get_loan_trend_data()
+                
+                # 2. Book Categories - Distribution of books by genre
+                category_data = self._get_book_categories_data()
+                
+                # 3. Book Acquisitions - Monthly book acquisitions for the last 6 months
+                acquisitions_data = self._get_book_acquisitions_data()
+                
+                # 4. Loan Status - Distribution of loan statuses
+                loan_status_data = self._get_loan_status_data()
+                
+                # 5. Member Activities - Statistics on member activities
+                member_activities_data = self._get_member_activities_data()
+                
+                # 6. Book Condition - Distribution of books by condition
+                book_condition_data = self._get_book_condition_data()
+                
+                # 7. Revenue Data - Monthly revenue from fines/fees
+                revenue_data = self._get_revenue_data()
+                
+                # 8. Reading Times - Distribution of when books are borrowed
+                reading_times_data = self._get_reading_times_data()
+                
+                # Combine all data into the dashboard data structure
                 data = {
-                    # 1. Line chart for loan trends
-                    'loan_trend': {
-                        'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        'datasets': [{
-                            'label': 'Loans',
-                            'data': [12, 19, 3, 5, 2, 3],
-                            'backgroundColor': 'rgba(75, 192, 192, 0.2)',
-                            'borderColor': 'rgba(75, 192, 192, 1)',
-                            'borderWidth': 2,
-                            'tension': 0.1
-                        }]
-                    },
-                    
-                    # 2. Pie chart for book categories
-                    'book_categories': {
-                        'labels': ['Fiction', 'Non-Fiction', 'Sci-Fi', 'Biography', 'History'],
-                        'datasets': [{
-                            'data': [30, 20, 15, 25, 10],
-                            'backgroundColor': [
-                                'rgba(255, 99, 132, 0.7)',
-                                'rgba(54, 162, 235, 0.7)',
-                                'rgba(255, 206, 86, 0.7)',
-                                'rgba(75, 192, 192, 0.7)',
-                                'rgba(153, 102, 255, 0.7)',
-                            ],
-                            'borderColor': 'rgba(255, 255, 255, 1)',
-                            'borderWidth': 1
-                        }]
-                    },
-                    
-                    # 3. Bar chart for monthly book acquisitions
-                    'book_acquisitions': {
-                        'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        'datasets': [{
-                            'label': 'New Books',
-                            'data': [5, 7, 10, 3, 8, 12],
-                            'backgroundColor': 'rgba(54, 162, 235, 0.7)',
-                            'borderColor': 'rgba(54, 162, 235, 1)',
-                            'borderWidth': 1
-                        }]
-                    },
-                    
-                    # 4. Doughnut chart for loan status
-                    'loan_status': {
-                        'labels': ['Active', 'Returned', 'Overdue', 'Lost'],
-                        'datasets': [{
-                            'data': [45, 30, 15, 10],
-                            'backgroundColor': [
-                                'rgba(75, 192, 192, 0.7)',
-                                'rgba(54, 162, 235, 0.7)',
-                                'rgba(255, 159, 64, 0.7)',
-                                'rgba(255, 99, 132, 0.7)'
-                            ],
-                            'borderColor': 'rgba(255, 255, 255, 1)',
-                            'borderWidth': 1,
-                            'hoverOffset': 4
-                        }]
-                    },
-                    
-                    # 5. Radar chart for member activities
-                    'member_activities': {
-                        'labels': ['Loans', 'Returns', 'Renewals', 'Reservations', 'Visits'],
-                        'datasets': [{
-                            'label': 'Regular Members',
-                            'data': [65, 59, 90, 81, 56],
-                            'fill': True,
-                            'backgroundColor': 'rgba(54, 162, 235, 0.2)',
-                            'borderColor': 'rgba(54, 162, 235, 1)',
-                            'pointBackgroundColor': 'rgba(54, 162, 235, 1)',
-                            'pointBorderColor': '#fff',
-                            'pointHoverBackgroundColor': '#fff',
-                            'pointHoverBorderColor': 'rgba(54, 162, 235, 1)'
-                        }, {
-                            'label': 'Premium Members',
-                            'data': [28, 48, 40, 19, 96],
-                            'fill': True,
-                            'backgroundColor': 'rgba(255, 99, 132, 0.2)',
-                            'borderColor': 'rgba(255, 99, 132, 1)',
-                            'pointBackgroundColor': 'rgba(255, 99, 132, 1)',
-                            'pointBorderColor': '#fff',
-                            'pointHoverBackgroundColor': '#fff',
-                            'pointHoverBorderColor': 'rgba(255, 99, 132, 1)'
-                        }]
-                    },
-                    
-                    # 6. Polar area chart for book condition
-                    'book_condition': {
-                        'labels': ['New', 'Good', 'Fair', 'Poor', 'Damaged'],
-                        'datasets': [{
-                            'data': [11, 16, 7, 3, 2],
-                            'backgroundColor': [
-                                'rgba(75, 192, 192, 0.7)',
-                                'rgba(54, 162, 235, 0.7)',
-                                'rgba(255, 206, 86, 0.7)',
-                                'rgba(255, 159, 64, 0.7)',
-                                'rgba(255, 99, 132, 0.7)'
-                            ],
-                            'borderWidth': 1
-                        }]
-                    },
-                    
-                    # 7. Bar chart for revenue by month
-                    'revenue_data': {
-                        'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        'datasets': [{
-                            'label': 'Revenue',
-                            'data': [1200, 1900, 1300, 1500, 2200, 1800],
-                            'backgroundColor': 'rgba(153, 102, 255, 0.5)',
-                            'borderColor': 'rgba(153, 102, 255, 1)',
-                            'borderWidth': 1
-                        }]
-                    },
-                    
-                    # 8. Line chart for popular reading times
-                    'reading_times': {
-                        'labels': ['Morning', 'Afternoon', 'Evening', 'Night'],
-                        'datasets': [{
-                            'label': 'Weekdays',
-                            'data': [20, 30, 45, 25],
-                            'backgroundColor': 'rgba(54, 162, 235, 0.5)',
-                            'borderColor': 'rgba(54, 162, 235, 1)',
-                            'borderWidth': 1
-                        }, {
-                            'label': 'Weekends',
-                            'data': [15, 40, 55, 35],
-                            'backgroundColor': 'rgba(255, 159, 64, 0.5)',
-                            'borderColor': 'rgba(255, 159, 64, 1)',
-                            'borderWidth': 1
-                        }]
-                    }
+                    'loan_trend': loan_data,
+                    'book_categories': category_data,
+                    'book_acquisitions': acquisitions_data,
+                    'loan_status': loan_status_data,
+                    'member_activities': member_activities_data,
+                    'book_condition': book_condition_data,
+                    'revenue': revenue_data,
+                    'reading_times': reading_times_data
                 }
                 
                 # Store as JSON
                 record.graph_data = json.dumps(data)
+                
             except Exception as e:
-                # Provide fallback data in case of error
+                _logger.error("Error generating dashboard data: %s", str(e))
+                # Provide minimal fallback data in case of error
                 record.graph_data = json.dumps({
                     'error': str(e),
                     'loan_trend': {
-                        'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        'labels': ['Error'],
                         'datasets': [{
-                            'label': 'Loans',
-                            'data': [12, 19, 3, 5, 2, 3],
-                            'backgroundColor': 'rgba(75, 192, 192, 0.2)',
-                            'borderColor': 'rgba(75, 192, 192, 1)',
-                        }]
-                    },
-                    'book_categories': {
-                        'labels': ['Fiction', 'Non-Fiction', 'Sci-Fi', 'Biography', 'History'],
-                        'datasets': [{
-                            'data': [30, 20, 15, 25, 10],
-                            'backgroundColor': [
-                                'rgba(255, 99, 132, 0.7)',
-                                'rgba(54, 162, 235, 0.7)',
-                                'rgba(255, 206, 86, 0.7)',
-                                'rgba(75, 192, 192, 0.7)',
-                                'rgba(153, 102, 255, 0.7)',
-                            ],
+                            'label': 'Data unavailable',
+                            'data': [0],
+                            'backgroundColor': 'rgba(255, 99, 132, 0.2)',
+                            'borderColor': 'rgba(255, 99, 132, 1)',
                         }]
                     }
                 })
+    
+    def _get_loan_trend_data(self):
+        """Get monthly loan data for the last 6 months"""
+        # Get the last 6 months
+        today = fields.Date.today()
+        months = []
+        labels = []
+        
+        for i in range(5, -1, -1):  # Last 6 months (including current)
+            month_start = today.replace(day=1) - relativedelta(months=i)
+            month_end = month_start + relativedelta(months=1) - relativedelta(days=1)
+            months.append((month_start, month_end))
+            labels.append(month_start.strftime('%b'))
+        
+        # Get loan counts for each month
+        loan_counts = []
+        for month_start, month_end in months:
+            count = self.env['custom.book.loan'].search_count([
+                ('loan_date', '>=', month_start),
+                ('loan_date', '<=', month_end)
+            ])
+            loan_counts.append(count)
+        
+        return {
+            'labels': labels,
+            'datasets': [{
+                'label': 'Book Loans',
+                'data': loan_counts,
+                'backgroundColor': 'rgba(26, 115, 232, 0.2)',
+                'borderColor': 'rgba(26, 115, 232, 0.8)',
+                'borderWidth': 2,
+                'tension': 0.4,
+                'pointBackgroundColor': 'rgba(26, 115, 232, 1)',
+                'pointBorderColor': '#fff',
+                'pointRadius': 5,
+                'pointHoverRadius': 7,
+                'fill': True
+            }]
+        }
+    
+    def _get_book_categories_data(self):
+        """Get distribution of books by genre"""
+        # Query book genres and their counts
+        query = """
+            SELECT g.name, COUNT(b.id) as book_count
+            FROM custom_book_genre g
+            LEFT JOIN custom_book b ON b.genre_id = g.id
+            WHERE g.active = TRUE
+            GROUP BY g.id, g.name
+            ORDER BY book_count DESC
+            LIMIT 5
+        """
+        self.env.cr.execute(query)
+        results = self.env.cr.fetchall()
+        
+        if not results:
+            # Fallback if no data
+            return {
+                'labels': ['No Data'],
+                'datasets': [{
+                    'data': [1],
+                    'backgroundColor': ['rgba(200, 200, 200, 0.7)'],
+                    'borderColor': ['rgba(200, 200, 200, 1)'],
+                    'borderWidth': 1
+                }]
+            }
+        
+        labels = [result[0] for result in results]
+        data = [result[1] for result in results]
+        
+        # Generate colors based on the number of genres
+        colors = [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(199, 199, 199, 0.7)'
+        ]
+        
+        border_colors = [color.replace('0.7', '1') for color in colors]
+        
+        # Ensure we have enough colors
+        bg_colors = colors[:len(labels)]
+        border_colors = border_colors[:len(labels)]
+        
+        return {
+            'labels': labels,
+            'datasets': [{
+                'data': data,
+                'backgroundColor': bg_colors,
+                'borderColor': border_colors,
+                'borderWidth': 1,
+                'hoverOffset': 4
+            }]
+        }
+    
+    def _get_book_acquisitions_data(self):
+        """Get monthly book acquisitions for the last 6 months"""
+        # Get the last 6 months
+        today = fields.Date.today()
+        months = []
+        labels = []
+        
+        for i in range(5, -1, -1):  # Last 6 months
+            month_start = today.replace(day=1) - relativedelta(months=i)
+            month_end = month_start + relativedelta(months=1) - relativedelta(days=1)
+            months.append((month_start, month_end))
+            labels.append(month_start.strftime('%b'))
+        
+        # Get new book counts for each month
+        acquisition_counts = []
+        for month_start, month_end in months:
+            count = self.env['custom.book'].search_count([
+                ('acquisition_date', '>=', month_start),
+                ('acquisition_date', '<=', month_end)
+            ])
+            acquisition_counts.append(count)
+        
+        return {
+            'labels': labels,
+            'datasets': [{
+                'label': 'New Books',
+                'data': acquisition_counts,
+                'backgroundColor': 'rgba(66, 133, 244, 0.8)',
+                'borderColor': 'rgba(66, 133, 244, 1)',
+                'borderWidth': 1,
+                'borderRadius': 4,
+                'barThickness': 25,
+                'maxBarThickness': 35
+            }]
+        }
+    
+    def _get_loan_status_data(self):
+        """Get distribution of loan statuses"""
+        # Count loans by status
+        statuses = ['confirmed', 'returned', 'overdue', 'lost']
+        status_labels = ['Active', 'Returned', 'Overdue', 'Lost']
+        
+        status_counts = []
+        for status in statuses:
+            count = self.env['custom.book.loan'].search_count([('state', '=', status)])
+            status_counts.append(count)
+        
+        # Ensure we have at least some data
+        if all(count == 0 for count in status_counts):
+            status_counts = [1, 0, 0, 0]  # Default to show something
+        
+        # Define colors for each status
+        colors = [
+            'rgba(52, 168, 83, 0.8)',  # Active - Green
+            'rgba(66, 133, 244, 0.8)',  # Returned - Blue
+            'rgba(251, 188, 5, 0.8)',   # Overdue - Yellow
+            'rgba(234, 67, 53, 0.8)'    # Lost - Red
+        ]
+        
+        border_colors = [
+            'rgba(52, 168, 83, 1)',
+            'rgba(66, 133, 244, 1)',
+            'rgba(251, 188, 5, 1)',
+            'rgba(234, 67, 53, 1)'
+        ]
+        
+        return {
+            'labels': status_labels,
+            'datasets': [{
+                'data': status_counts,
+                'backgroundColor': colors,
+                'borderColor': border_colors,
+                'borderWidth': 1,
+                'hoverOffset': 4,
+                'cutout': '60%'
+            }]
+        }
+    
+    def _get_member_activities_data(self):
+        """Get statistics on member activities by membership type"""
+        # Get member types and their activities
+        member_types = ['standard', 'premium', 'student', 'senior']
+        labels = ['Loans', 'Returns', 'Overdue', 'Active Members', 'New Members']
+        
+        # Get loan counts for standard members
+        standard_data = self._get_member_type_activities('standard')
+        
+        # Get loan counts for premium members
+        premium_data = self._get_member_type_activities('premium')
+        
+        return {
+            'labels': labels,
+            'datasets': [
+                {
+                    'label': 'Standard Members',
+                    'data': standard_data,
+                    'fill': True,
+                    'backgroundColor': 'rgba(54, 162, 235, 0.2)',
+                    'borderColor': 'rgba(54, 162, 235, 1)',
+                    'pointBackgroundColor': 'rgba(54, 162, 235, 1)',
+                    'pointBorderColor': '#fff',
+                    'pointHoverBackgroundColor': '#fff',
+                    'pointHoverBorderColor': 'rgba(54, 162, 235, 1)'
+                },
+                {
+                    'label': 'Premium Members',
+                    'data': premium_data,
+                    'fill': True,
+                    'backgroundColor': 'rgba(255, 99, 132, 0.2)',
+                    'borderColor': 'rgba(255, 99, 132, 1)',
+                    'pointBackgroundColor': 'rgba(255, 99, 132, 1)',
+                    'pointBorderColor': '#fff',
+                    'pointHoverBackgroundColor': '#fff',
+                    'pointHoverBorderColor': 'rgba(255, 99, 132, 1)'
+                }
+            ]
+        }
+    
+    def _get_member_type_activities(self, membership_type):
+        """Get activity data for a specific membership type"""
+        # Get all members of this type
+        members = self.env['custom.library.member'].search([
+            ('membership_type', '=', membership_type)
+        ])
+        
+        if not members:
+            return [0, 0, 0, 0, 0]
+        
+        member_ids = [m.partner_id.id for m in members]
+        
+        # Count total loans
+        loans_count = self.env['custom.book.loan'].search_count([
+            ('member_id', 'in', member_ids)
+        ])
+        
+        # Count returns
+        returns_count = self.env['custom.book.loan'].search_count([
+            ('member_id', 'in', member_ids),
+            ('state', '=', 'returned')
+        ])
+        
+        # Count overdue
+        overdue_count = self.env['custom.book.loan'].search_count([
+            ('member_id', 'in', member_ids),
+            ('state', '=', 'overdue')
+        ])
+        
+        # Count active members (made at least one loan)
+        active_members_count = len(self.env['custom.book.loan'].search([
+            ('member_id', 'in', member_ids)
+        ]).mapped('member_id'))
+        
+        # New members (last 30 days)
+        today = fields.Date.today()
+        last_month = today - relativedelta(days=30)
+        new_members_count = self.env['custom.library.member'].search_count([
+            ('membership_date', '>=', last_month),
+            ('membership_type', '=', membership_type)
+        ])
+        
+        return [loans_count, returns_count, overdue_count, active_members_count, new_members_count]
+    
+    def _get_book_condition_data(self):
+        """Get distribution of books by condition"""
+        conditions = ['new', 'good', 'fair', 'poor', 'damaged']
+        condition_labels = ['New', 'Good', 'Fair', 'Poor', 'Damaged']
+        
+        condition_counts = []
+        for condition in conditions:
+            count = self.env['custom.book'].search_count([('condition', '=', condition)])
+            condition_counts.append(count)
+        
+        # Ensure we have at least some data
+        if all(count == 0 for count in condition_counts):
+            condition_counts = [1, 1, 1, 0, 0]  # Default to show something
+        
+        # Define colors for each condition
+        colors = [
+            'rgba(52, 168, 83, 0.8)',  # New - Green
+            'rgba(66, 133, 244, 0.8)',  # Good - Blue
+            'rgba(251, 188, 5, 0.8)',   # Fair - Yellow
+            'rgba(234, 67, 53, 0.8)',   # Poor - Red
+            'rgba(0, 0, 0, 0.5)'       # Damaged - Black
+        ]
+        
+        return {
+            'labels': condition_labels,
+            'datasets': [{
+                'data': condition_counts,
+                'backgroundColor': colors,
+                'borderWidth': 1
+            }]
+        }
+    
+    def _get_revenue_data(self):
+        """Get monthly revenue from fines for the last 6 months"""
+        # Get the last 6 months
+        today = fields.Date.today()
+        months = []
+        labels = []
+        
+        for i in range(5, -1, -1):  # Last 6 months
+            month_start = today.replace(day=1) - relativedelta(months=i)
+            month_end = month_start + relativedelta(months=1) - relativedelta(days=1)
+            months.append((month_start, month_end))
+            labels.append(month_start.strftime('%b'))
+        
+        # Calculate revenue from fines for each month
+        monthly_revenue = []
+        for month_start, month_end in months:
+            # Get all loans with fines in this month
+            loans = self.env['custom.book.loan'].search([
+                ('actual_return_date', '>=', month_start),
+                ('actual_return_date', '<=', month_end),
+                ('state', '=', 'returned'),
+                ('fine_amount', '>', 0)
+            ])
+            
+            # Sum all fines
+            revenue = sum(loans.mapped('fine_amount'))
+            monthly_revenue.append(revenue)
+        
+        return {
+            'labels': labels,
+            'datasets': [{
+                'label': 'Revenue ($)',
+                'data': monthly_revenue,
+                'backgroundColor': 'rgba(0, 184, 169, 0.8)',
+                'borderColor': 'rgba(0, 184, 169, 1)',
+                'borderWidth': 1,
+                'borderRadius': 4,
+                'barThickness': 25,
+                'maxBarThickness': 35
+            }]
+        }
+    
+    def _get_reading_times_data(self):
+        """Analyze when books are borrowed (by day of week)"""
+        # Get day distribution
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        weekday_counts = [0, 0, 0, 0, 0, 0, 0]
+        
+        # Get all loans from the past year
+        today = fields.Date.today()
+        last_year = today - relativedelta(years=1)
+        
+        loans = self.env['custom.book.loan'].search([
+            ('loan_date', '>=', last_year)
+        ])
+        
+        # Count loans by day of week
+        for loan in loans:
+            weekday = loan.loan_date.weekday()  # 0 = Monday, 6 = Sunday
+            weekday_counts[weekday] += 1
+        
+        # Split into weekday and weekend data
+        weekday_data = weekday_counts[:5] + [0, 0]
+        weekend_data = [0, 0, 0, 0, 0] + weekday_counts[5:]
+        
+        return {
+            'labels': days,
+            'datasets': [
+                {
+                    'label': 'Weekday Borrows',
+                    'data': weekday_data,
+                    'backgroundColor': 'rgba(103, 58, 183, 0.8)',
+                    'borderColor': 'rgba(103, 58, 183, 1)',
+                    'borderWidth': 1,
+                    'borderRadius': 4,
+                    'barThickness': 15,
+                    'maxBarThickness': 20
+                },
+                {
+                    'label': 'Weekend Borrows',
+                    'data': weekend_data,
+                    'backgroundColor': 'rgba(186, 104, 200, 0.8)',
+                    'borderColor': 'rgba(186, 104, 200, 1)',
+                    'borderWidth': 1,
+                    'borderRadius': 4,
+                    'barThickness': 15,
+                    'maxBarThickness': 20
+                }
+            ]
+        }
     
     def action_view_books(self):
         return {
