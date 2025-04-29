@@ -37,4 +37,19 @@
         parent="menu_library_root"
         action="action_authors"
         sequence="20"/>
+
+    <!-- Member Menu -->
+    <menuitem id="menu_library_members"
+        name="Members"
+        parent="menu_library_root"
+        action="action_members"
+        sequence="30"/>
+
+    <!-- Loan Menu -->
+    <menuitem id="menu_library_loans"
+        name="Loans"
+        parent="menu_library_root"
+        action="action_loans"
+        sequence="40"/>
+
 </odoo>

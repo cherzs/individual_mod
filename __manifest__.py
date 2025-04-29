@@ -14,7 +14,9 @@
         'security/ir.model.access.csv',
         'views/author_views.xml',
         'views/book_views.xml',
+        'views/book_loan_views.xml',
         'views/library_dashboard.xml',
+        'views/member_view.xml',
         'views/menu_views.xml',
     ],
     'demo' : [

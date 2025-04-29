@@ -18,21 +18,23 @@ class LibraryDashboardController {
         this._renderAttempts = 0;
         this._initAttempts = 0;
         this._loadAttempts = 0;
+        
+        // Define constants for max attempts
+        this.MAX_INIT_ATTEMPTS = 3;
+        this.MAX_LOAD_ATTEMPTS = 3;  
+        this.MAX_RENDER_ATTEMPTS = 3;
     }
     
     async init() {
         try {
             if (this.initialized) return;
             
-            // Limit maximum initialization attempts
-            const MAX_INIT_ATTEMPTS = 3;
-            
             // Increment init attempts
             this._initAttempts++;
             
             // Check if we've exceeded the maximum attempts
-            if (this._initAttempts > MAX_INIT_ATTEMPTS) {
-                console.error(`Exceeded maximum initialization attempts (${MAX_INIT_ATTEMPTS}). Aborting.`);
+            if (this._initAttempts > this.MAX_INIT_ATTEMPTS) {
+                console.error(`Exceeded maximum initialization attempts (${this.MAX_INIT_ATTEMPTS}). Aborting.`);
                 
                 // Display error message to user
                 const dashboardEl = document.querySelector('.o_dashboard_charts');
@@ -89,7 +91,7 @@ class LibraryDashboardController {
             this.error = error.message || "Initialization failed";
             
             // Try again with a limit
-            if (this._initAttempts < MAX_INIT_ATTEMPTS) {
+            if (this._initAttempts < this.MAX_INIT_ATTEMPTS) {
                 setTimeout(() => this.init(), 1000); // Longer delay for initialization retries
                 return;
             }
@@ -295,17 +297,14 @@ class LibraryDashboardController {
     loadChartData() {
         return new Promise(async (resolve, reject) => {
             try {
-                // Limit maximum load attempts
-                const MAX_LOAD_ATTEMPTS = 3;
-                
                 // Increment load attempts
                 this._loadAttempts++;
                 
                 // Check if we've exceeded the maximum attempts
-                if (this._loadAttempts > MAX_LOAD_ATTEMPTS) {
-                    console.error(`Exceeded maximum chart data loading attempts (${MAX_LOAD_ATTEMPTS}). Aborting.`);
+                if (this._loadAttempts > this.MAX_LOAD_ATTEMPTS) {
+                    console.error(`Exceeded maximum chart data loading attempts (${this.MAX_LOAD_ATTEMPTS}). Aborting.`);
                     this._loadAttempts = 0; // Reset for future attempts
-                    reject(new Error(`Failed to load chart data after ${MAX_LOAD_ATTEMPTS} attempts`));
+                    reject(new Error(`Failed to load chart data after ${this.MAX_LOAD_ATTEMPTS} attempts`));
                     return;
                 }
                 
@@ -424,8 +423,8 @@ class LibraryDashboardController {
                 this.error = error.message || "Failed to load chart data";
                 
                 // Try again with a limit if there was an unexpected error
-                if (this._loadAttempts < MAX_LOAD_ATTEMPTS) {
-                    console.log(`Retrying chart data loading (attempt ${this._loadAttempts} of ${MAX_LOAD_ATTEMPTS})...`);
+                if (this._loadAttempts < this.MAX_LOAD_ATTEMPTS) {
+                    console.log(`Retrying chart data loading (attempt ${this._loadAttempts} of ${this.MAX_LOAD_ATTEMPTS})...`);
                     setTimeout(() => {
                         this.loadChartData()
                             .then(resolve)
@@ -600,7 +599,12 @@ class LibraryDashboardController {
                                     result = await $.ajax({
                                         url: '/library/dashboard/data',
                                         type: 'POST',
-                                        data: JSON.stringify({}),
+                                        data: JSON.stringify({
+                                            jsonrpc: "2.0",
+                                            method: "call",
+                                            params: {},
+                                            id: new Date().getTime()
+                                        }),
                                         contentType: 'application/json',
                                         dataType: 'json'
                                     });
@@ -617,7 +621,12 @@ class LibraryDashboardController {
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
-                                body: JSON.stringify({}),
+                                body: JSON.stringify({
+                                    jsonrpc: "2.0", 
+                                    method: "call",
+                                    params: {},
+                                    id: new Date().getTime()
+                                }),
                             });
                             
                             if (!response.ok) {
@@ -627,18 +636,32 @@ class LibraryDashboardController {
                             result = await response.json();
                         }
                         
-                        if (!result || !result.success) {
-                            reject(new Error("Server returned an error or invalid data"));
-                            return;
+                        // Handle Odoo JSONRPC response format
+                        // The response comes as {jsonrpc: '2.0', id: null, result: {our_actual_data}}
+                        if (result && result.jsonrpc === '2.0' && result.result) {
+                            // This is an Odoo jsonrpc response, extract actual result
+                            result = result.result;
                         }
                         
-                        // Parse and store the data
-                        this.chartData = result.data;
-                        
-                        // Update the UI immediately
-                        this.renderCharts();
-                        
-                        resolve(result);
+                        // Check if the result is valid - with improved validation 
+                        if (result && result.success === true && result.data) {
+                            // Parse and store the data
+                            this.chartData = result.data;
+                            
+                            // Update the UI immediately
+                            this.renderCharts();
+                            
+                            resolve(result);
+                        } else if (result && result.data) {
+                            // Alternative valid format - some Odoo versions might not set the success flag
+                            // But at least we have data
+                            this.chartData = result.data;
+                            this.renderCharts();
+                            resolve(result);
+                        } else {
+                            console.error("Invalid server response format:", result);
+                            reject(new Error("Server returned an error or invalid data"));
+                        }
                     } catch (error) {
                         console.error("Error in fetchData:", error);
                         reject(error);
@@ -656,17 +679,14 @@ class LibraryDashboardController {
     renderCharts() {
         return new Promise(async (resolve, reject) => {
             try {
-                // Limit maximum render attempts
-                const MAX_RENDER_ATTEMPTS = 3;
-                
                 // Increment render attempts
                 this._renderAttempts++;
                 
                 // Check if we've exceeded the maximum attempts
-                if (this._renderAttempts > MAX_RENDER_ATTEMPTS) {
-                    console.error(`Exceeded maximum chart rendering attempts (${MAX_RENDER_ATTEMPTS}). Aborting.`);
+                if (this._renderAttempts > this.MAX_RENDER_ATTEMPTS) {
+                    console.error(`Exceeded maximum chart rendering attempts (${this.MAX_RENDER_ATTEMPTS}). Aborting.`);
                     this._renderAttempts = 0; // Reset for future attempts
-                    reject(new Error(`Failed to render charts after ${MAX_RENDER_ATTEMPTS} attempts`));
+                    reject(new Error(`Failed to render charts after ${this.MAX_RENDER_ATTEMPTS} attempts`));
                     return;
                 }
                 
@@ -677,26 +697,47 @@ class LibraryDashboardController {
                     return;
                 }
                 
+                // Map the backend keys to frontend keys
+                const backendToFrontendMap = {
+                    'loan_trend': 'loanTrends',
+                    'book_categories': 'categories',
+                    'book_acquisitions': 'acquisitions',
+                    'loan_status': 'loanStatus',
+                    'member_activities': 'memberActivities',
+                    'book_condition': 'bookCondition',
+                    'revenue': 'revenue',
+                    'reading_times': 'readingTimes'
+                };
+                
+                // Create mapped data structure that matches frontend expectations
+                const mappedData = {};
+                for (const [backendKey, frontendKey] of Object.entries(backendToFrontendMap)) {
+                    if (this.chartData[backendKey]) {
+                        mappedData[frontendKey] = this.chartData[backendKey];
+                    }
+                }
+                
+                // If we have any mapped data, use it instead
+                if (Object.keys(mappedData).length > 0) {
+                    this.chartData = {...this.chartData, ...mappedData};
+                }
+                
                 // Clear any previous errors and reset chart instances
                 this.error = null;
                 
-                // Render each chart, handling errors individually
-                // Each chart is rendered with a fallback mechanism
                 await Promise.allSettled([
-                    this.renderChartWithFallback('loanTrends', () => this.renderLoanTrendsChart(this.chartData.loanTrends)),
-                    this.renderChartWithFallback('categories', () => this.renderCategoriesChart(this.chartData.categories)),
-                    this.renderChartWithFallback('acquisitions', () => this.renderAcquisitionsChart(this.chartData.acquisitions)),
-                    this.renderChartWithFallback('loanStatus', () => this.renderLoanStatusChart(this.chartData.loanStatus)),
-                    this.renderChartWithFallback('memberActivities', () => this.renderMemberActivitiesChart(this.chartData.memberActivities)),
-                    this.renderChartWithFallback('bookCondition', () => this.renderBookConditionChart(this.chartData.bookCondition)),
+                    this.renderChartWithFallback('loanTrends', () => this.renderLoanTrendsChart(this.chartData.loanTrends || this.chartData.loan_trend)),
+                    this.renderChartWithFallback('categories', () => this.renderCategoriesChart(this.chartData.categories || this.chartData.book_categories)),
+                    this.renderChartWithFallback('acquisitions', () => this.renderAcquisitionsChart(this.chartData.acquisitions || this.chartData.book_acquisitions)),
+                    this.renderChartWithFallback('loanStatus', () => this.renderLoanStatusChart(this.chartData.loanStatus || this.chartData.loan_status)),
+                    this.renderChartWithFallback('memberActivities', () => this.renderMemberActivitiesChart(this.chartData.memberActivities || this.chartData.member_activities)),
+                    this.renderChartWithFallback('bookCondition', () => this.renderBookConditionChart(this.chartData.bookCondition || this.chartData.book_condition)),
                     this.renderChartWithFallback('revenue', () => this.renderRevenueChart(this.chartData.revenue)),
-                    this.renderChartWithFallback('readingTimes', () => this.renderReadingTimesChart(this.chartData.readingTimes))
+                    this.renderChartWithFallback('readingTimes', () => this.renderReadingTimesChart(this.chartData.readingTimes || this.chartData.reading_times))
                 ]);
                 
-                // Setup resize handling
                 this.handleResize();
                 
-                // Reset attempt counter after successful rendering
                 this._renderAttempts = 0;
                 
                 resolve();
@@ -704,13 +745,12 @@ class LibraryDashboardController {
                 console.error("Error rendering charts:", error);
                 this.error = error.message || "Failed to render charts";
                 
-                // Try again with a limit
-                if (this._renderAttempts < MAX_RENDER_ATTEMPTS) {
+                if (this._renderAttempts < this.MAX_RENDER_ATTEMPTS) {
                     setTimeout(() => {
                         this.renderCharts()
                             .then(resolve)
                             .catch(reject);
-                    }, 800); // Wait before retrying
+                    }, 800); 
                     return;
                 }
                 
@@ -721,10 +761,31 @@ class LibraryDashboardController {
     
     renderChartWithFallback(chartKey, renderFunction) {
         try {
-            // Get the data for this chart
-            const data = this.chartData[chartKey];
+
+            let data = this.chartData[chartKey];
+
+            if (!data) {
+                const snakeCaseKey = chartKey.replace(/([A-Z])/g, '_$1').toLowerCase();
+                data = this.chartData[snakeCaseKey];
+                
+                if (!data) {
+                    const backendKeys = {
+                        'loanTrends': 'loan_trend',
+                        'categories': 'book_categories',
+                        'acquisitions': 'book_acquisitions',
+                        'loanStatus': 'loan_status',
+                        'memberActivities': 'member_activities',
+                        'bookCondition': 'book_condition',
+                        'revenue': 'revenue',
+                        'readingTimes': 'reading_times'
+                    };
+                    
+                    if (backendKeys[chartKey]) {
+                        data = this.chartData[backendKeys[chartKey]];
+                    }
+                }
+            }
             
-            // If data exists, render the chart
             if (data) {
                 renderFunction(data);
             } else {
@@ -1518,23 +1579,41 @@ class LibraryDashboardController {
                             result = await $.ajax({
                                 url: '/library/dashboard/data',
                                 type: 'POST',
-                                data: JSON.stringify({ refresh: true }),
+                                data: JSON.stringify({ 
+                                    jsonrpc: "2.0",
+                                    method: "call",
+                                    params: { refresh: true },
+                                    id: new Date().getTime()
+                                }),
                                 contentType: 'application/json',
                                 dataType: 'json'
                             });
                         }
                         
-                        if (!result || !result.success) {
-                            throw new Error("Server returned an error or invalid data");
+                        // Handle Odoo JSONRPC response format
+                        if (result && result.jsonrpc === '2.0' && result.result) {
+                            // This is an Odoo jsonrpc response, extract actual result
+                            result = result.result;
                         }
                         
-                        // Store the new data
-                        this.chartData = result.data;
-                        
-                        // Re-render all charts with new data
-                        await this.renderCharts();
-                        
-                        return result;
+                        // Improved validation of server response
+                        if (result && result.success === true && result.data) {
+                            // Store the new data
+                            this.chartData = result.data;
+                            
+                            // Re-render all charts with new data
+                            await this.renderCharts();
+                            
+                            return result;
+                        } else if (result && result.data) {
+                            // Alternative valid format
+                            this.chartData = result.data;
+                            await this.renderCharts();
+                            return result;
+                        } else {
+                            console.error("Invalid server response format:", result);
+                            throw new Error("Server returned an error or invalid data");
+                        }
                     } catch (error) {
                         console.error("Error refreshing data:", error);
                         throw error;
@@ -1800,39 +1879,51 @@ function initDashboard() {
         // Start checking
         setTimeout(checkForDashboard, 100);
         
-        // Handle Odoo view changes - important for SPA navigation
-        document.addEventListener('DOMSubtreeModified', function(e) {
+        // Use MutationObserver instead of deprecated DOMSubtreeModified event
+        const contentObserver = new MutationObserver((mutations) => {
             // Only check meaningful DOM changes
-            if (e.target.classList && 
-                (e.target.classList.contains('o_content') || 
-                 e.target.classList.contains('o_form_view') ||
-                 e.target.classList.contains('o_main_content'))) {
-                
-                // Wait a moment for the DOM to stabilize
-                setTimeout(() => {
-                    // Clean up any existing chart controller
-                    if (window.dashboardController) {
-                        window.dashboardController.cleanupAllChartInstances();
-                    }
-                    
-                    // Check for dashboard in the new view
-                    let foundElement = null;
-                    for (const selector of alternativeSelectors) {
-                        const el = document.querySelector(selector);
-                        if (el) {
-                            foundElement = el;
-                            break;
+            for (const mutation of mutations) {
+                if (mutation.addedNodes && mutation.addedNodes.length) {
+                    for (const node of mutation.addedNodes) {
+                        if (node.classList && 
+                           (node.classList.contains('o_content') || 
+                            node.classList.contains('o_form_view') ||
+                            node.classList.contains('o_main_content'))) {
+                            
+                            // Wait a moment for the DOM to stabilize
+                            setTimeout(() => {
+                                // Clean up any existing chart controller
+                                if (window.dashboardController) {
+                                    window.dashboardController.cleanupAllChartInstances();
+                                }
+                                
+                                // Check for dashboard in the new view
+                                let foundElement = null;
+                                for (const selector of alternativeSelectors) {
+                                    const el = document.querySelector(selector);
+                                    if (el) {
+                                        foundElement = el;
+                                        break;
+                                    }
+                                }
+                                
+                                if (foundElement) {
+                                    // Initialize new dashboard for this view
+                                    const dashboardController = new LibraryDashboardController();
+                                    dashboardController.init();
+                                    window.dashboardController = dashboardController;
+                                }
+                            }, 300);
                         }
                     }
-                    
-                    if (foundElement) {
-                        // Initialize new dashboard for this view
-                        const dashboardController = new LibraryDashboardController();
-                        dashboardController.init();
-                        window.dashboardController = dashboardController;
-                    }
-                }, 300);
+                }
             }
+        });
+        
+        // Start observing the document body
+        contentObserver.observe(document.body, { 
+            childList: true, 
+            subtree: true 
         });
     }
 }

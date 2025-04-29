@@ -14,14 +14,14 @@ class LibraryDashboardController(http.Controller):
         try:
             dashboard = request.env['custom.library.dashboard'].sudo()._get_default_dashboard()
             return {
-                'status': 'success',
+                'success': True,
                 'data': json.loads(dashboard.graph_data) if dashboard.graph_data else {},
                 'message': 'Data loaded successfully'
             }
         except Exception as e:
             _logger.error("Error loading dashboard data: %s", str(e))
             return {
-                'status': 'error',
+                'success': False,
                 'message': f'Error loading data: {str(e)}',
                 'data': {}
             }
@@ -35,14 +35,14 @@ class LibraryDashboardController(http.Controller):
             dashboard.invalidate_recordset(['graph_data'])
             dashboard._compute_graph_data()
             return {
-                'status': 'success',
+                'success': True,
                 'data': json.loads(dashboard.graph_data) if dashboard.graph_data else {},
                 'message': 'Data refreshed successfully'
             }
         except Exception as e:
             _logger.error("Error refreshing dashboard data: %s", str(e))
             return {
-                'status': 'error',
+                'success': False,
                 'message': f'Error refreshing data: {str(e)}',
                 'data': {}
             } 

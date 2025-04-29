@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Book Loan Form View -->
+    <record id="view_book_loan_form" model="ir.ui.view">
+        <field name="name">custom.book.loan.form</field>
+        <field name="model">custom.book.loan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" 
+                            class="oe_highlight my-2" invisible="state != 'draft'"/>
+                    <button name="action_return" string="Return Book" type="object" 
+                            class="oe_highlight ms-2 my-2" invisible="state != 'confirmed'"/>
+                    <button name="action_mark_lost" string="Mark as Lost" type="object" 
+                            class="btn-danger my-2" invisible="state not in ('confirmed', 'overdue')"/>
+                    <field name="state" widget="statusbar" class="my-2"
+                           statusbar_visible="draft,confirmed,returned,overdue"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="book_id"/>
+                            <field name="member_id"/>
+                            <field name="loan_date"/>
+                            <field name="loan_duration"/>
+                            <field name="return_date"/>
+                        </group>
+                        <group>
+                            <field name="actual_return_date" readonly="1" 
+                                   invisible="state != 'returned'"/>
+                            <field name="fine_amount" readonly="1" 
+                                   invisible="fine_amount == 0"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes" placeholder="Add notes about this loan..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Book Loan Tree View -->
+    <record id="view_book_loan_tree" model="ir.ui.view">
+        <field name="name">custom.book.loan.tree</field>
+        <field name="model">custom.book.loan</field>
+        <field name="arch" type="xml">
+            <tree decoration-danger="state=='overdue'" decoration-success="state=='returned'" 
+                  decoration-muted="state=='lost'" decoration-info="state=='confirmed'">
+                <field name="name"/>
+                <field name="book_id"/>
+                <field name="member_id"/>
+                <field name="loan_date"/>
+                <field name="return_date"/>
+                <field name="actual_return_date"/>
+                <field name="state"/>
+                <field name="fine_amount" sum="Total Fines"/>
+                <field name="currency_id" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Book Loan Search View -->
+    <record id="view_book_loan_search" model="ir.ui.view">
+        <field name="name">custom.book.loan.search</field>
+        <field name="model">custom.book.loan</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="book_id"/>
+                <field name="member_id"/>
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="Confirmed" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="returned" string="Returned" domain="[('state', '=', 'returned')]"/>
+                <filter name="overdue" string="Overdue" domain="[('state', '=', 'overdue')]"/>
+                <filter name="lost" string="Lost" domain="[('state', '=', 'lost')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_by_book" string="Book" context="{'group_by': 'book_id'}"/>
+                    <filter name="group_by_member" string="Member" context="{'group_by': 'member_id'}"/>
+                    <filter name="group_by_loan_date" string="Loan Date" context="{'group_by': 'loan_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Book Loan Action -->
+    <record id="action_loans" model="ir.actions.act_window">
+        <field name="name">Book Loans</field>
+        <field name="res_model">custom.book.loan</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_confirmed': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first book loan
+            </p>
+            <p>
+                Keep track of all book loans, returns, and fines.
+            </p>
+        </field>
+    </record>
+</odoo> 

@@ -8,26 +8,26 @@
                 <form>
                     <header>
                         <button name="action_marks_as_borrowed" string="Mark as Borrowed"
-                                type="object" class="btn-primary" invisible="state != 'available'"/>
+                                type="object" class="btn-primary ms-2 my-2" invisible="state != 'available'"/>
                         <button name="action_mark_as_available" string="Mark as Available"
-                                type="object" class="btn-primary" invisible="state != 'borrowed'"/>
+                                type="object" class="btn-primary my-2" invisible="state != 'borrowed'"/>
                         <button name="action_mark_as_lost" string="Mark as Lost"
-                                type="object" class="btn-danger" invisible="state != 'available'"/>
-                        <field name="state" widget="statusbar" statusbar_visible="available, borrowed, lost"/>
+                                type="object" class="btn-danger my-2" invisible="state != 'available'"/>
+                        <field name="state" widget="statusbar" class="my-2" statusbar_visible="available, borrowed, lost"/>
                     </header>
                     <sheet>
-                       <field name="cover_image" widget="image" class="oe_avatar"/>
-                       <div class="oe_title">
-                        <h1>
-                            <field name="name" placeholder="Book title"/>
-                        </h1>
-                       </div>
-                       <group>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="cover_image" widget="image" class="oe_avatar"/>
+                                <field name="name" placeholder="Book title"/>                           
+                            </h1>
+                        </div>
                         <group>
-                            <field name="isbn"/>
-                            <field name="author_id"/>
-                            <field name="genre_id"/>
-                            <field name="publisher"/>
+                            <group>
+                                <field name="isbn"/>
+                                <field name="author_id"/>
+                                <field name="genre_id"/>
+                                <field name="publisher"/>
                             <field name="date_published"/>                           
                         </group>
                         <group>
