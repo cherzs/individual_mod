@@ -354,10 +354,17 @@ class LibraryDashboardController {
             
             const chartData = this.chartData;
             
-            // Destroy any existing charts
-            Object.values(this.chartInstances).forEach(chart => {
-                if (chart) chart.destroy();
+            // Properly destroy any existing charts
+            Object.keys(this.chartInstances).forEach(key => {
+                if (this.chartInstances[key] instanceof Chart) {
+                    this.chartInstances[key].destroy();
+                    console.log(`Destroyed existing chart: ${key}`);
+                }
+                this.chartInstances[key] = null;
             });
+            
+            // Clear the chart instances object
+            this.chartInstances = {};
             
             // Render all charts
             this.renderLoanTrendsChart(chartData.loan_trend);
@@ -381,6 +388,18 @@ class LibraryDashboardController {
         } catch (error) {
             console.error("Error rendering charts:", error);
             this.error = error.message || "Failed to render charts";
+            
+            // Display error message in the chart container
+            const chartContainers = document.querySelectorAll('.chart_section');
+            chartContainers.forEach(container => {
+                const canvas = container.querySelector('canvas');
+                if (canvas) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'alert alert-danger';
+                    wrapper.textContent = `Error rendering chart: ${error.message}`;
+                    container.appendChild(wrapper);
+                }
+            });
         }
     }
     
@@ -432,347 +451,350 @@ class LibraryDashboardController {
     
     // Render Revenue Chart
     renderRevenueChart(data) {
-        const canvas = document.getElementById('revenueChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.revenueChart = new Chart(canvas, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            boxWidth: 15,
-                            padding: 15,
-                            font: {
-                                size: 13
-                            }
-                        }
-                    },
-                    tooltip: {
-                        padding: 10,
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        font: {
                             size: 13
                         }
                     }
                 },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        grid: {
-                            display: true,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return '$ ' + value;
-                            },
-                            font: {
-                                size: 12
-                            },
-                            padding: 5
-                        }
+                tooltip: {
+                    padding: 10,
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleFont: {
+                        size: 14
                     },
-                    x: {
-                        grid: {
-                            display: false
+                    bodyFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: {
+                        display: true,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$ ' + value;
                         },
-                        ticks: {
-                            font: {
-                                size: 12
-                            },
-                            padding: 5
-                        }
+                        font: {
+                            size: 12
+                        },
+                        padding: 5
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        padding: 5
                     }
                 }
             }
-        });
+        };
+        
+        this.chartInstances.revenueChart = this.safelyCreateChart('revenueChart', 'bar', data, options);
     }
     
     // Render Reading Times Chart
     renderReadingTimesChart(data) {
-        const canvas = document.getElementById('readingTimesChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.readingTimesChart = new Chart(canvas, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            boxWidth: 15,
-                            padding: 15,
-                            font: {
-                                size: 13
-                            }
-                        }
-                    },
-                    tooltip: {
-                        padding: 10,
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        font: {
                             size: 13
                         }
                     }
                 },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        },
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
-                        }
+                tooltip: {
+                    padding: 10,
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleFont: {
+                        size: 14
                     },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                size: 12
-                            }
+                    bodyFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
                         }
                     }
                 },
-                elements: {
-                    line: {
-                        tension: 0.4
+                x: {
+                    grid: {
+                        display: false
                     },
-                    point: {
-                        radius: 4,
-                        hoverRadius: 6
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
                     }
                 }
+            },
+            elements: {
+                line: {
+                    tension: 0.4
+                },
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
             }
-        });
+        };
+        
+        this.chartInstances.readingTimesChart = this.safelyCreateChart('readingTimesChart', 'line', data, options);
+    }
+    
+    // Helper method to safely create a chart
+    safelyCreateChart(canvasId, chartType, data, options) {
+        try {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || !data) {
+                console.warn(`Cannot render chart: canvas #${canvasId} or data not available`);
+                return null;
+            }
+            
+            // Ensure any existing chart is destroyed
+            if (this.chartInstances[canvasId]) {
+                this.chartInstances[canvasId].destroy();
+                this.chartInstances[canvasId] = null;
+            }
+            
+            // Also check if the canvas has a Chart instance attached to it
+            try {
+                const existingChart = Chart.getChart(canvas);
+                if (existingChart) {
+                    console.log(`Destroying existing chart on canvas #${canvasId}`);
+                    existingChart.destroy();
+                }
+            } catch (e) {
+                console.warn(`Error checking for existing chart on canvas #${canvasId}:`, e);
+            }
+            
+            // Create a new chart
+            const chart = new Chart(canvas, {
+                type: chartType,
+                data: data,
+                options: options || {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            return chart;
+        } catch (error) {
+            console.error(`Error creating ${chartType} chart on canvas #${canvasId}:`, error);
+            return null;
+        }
     }
     
     // Render individual charts
     renderLoanTrendsChart(data) {
-        const canvas = document.getElementById('loanChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.loanChart = new Chart(canvas, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 13
-                            }
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 13
                         }
-                    }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                elements: {
-                    point: {
-                        radius: 4,
-                        hoverRadius: 6
                     }
                 }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
             }
-        });
+        };
+        
+        this.chartInstances.loanChart = this.safelyCreateChart('loanChart', 'line', data, options);
     }
     
     renderCategoriesChart(data) {
-        const canvas = document.getElementById('categoryChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.categoryChart = new Chart(canvas, {
-            type: 'pie',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 13
-                            }
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 13
                         }
-                    },
-                    tooltip: {
-                        padding: 10,
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)'
                     }
+                },
+                tooltip: {
+                    padding: 10,
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
                 }
             }
-        });
+        };
+        
+        this.chartInstances.categoryChart = this.safelyCreateChart('categoryChart', 'pie', data, options);
     }
     
     renderAcquisitionsChart(data) {
-        const canvas = document.getElementById('acquisitionsChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.acquisitionsChart = new Chart(canvas, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 13
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 13
                         }
                     }
                 }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
             }
-        });
+        };
+        
+        this.chartInstances.acquisitionsChart = this.safelyCreateChart('acquisitionsChart', 'bar', data, options);
     }
     
     renderLoanStatusChart(data) {
-        const canvas = document.getElementById('loanStatusChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.loanStatusChart = new Chart(canvas, {
-            type: 'doughnut',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 13
-                            }
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 13
                         }
-                    },
-                    tooltip: {
-                        padding: 10,
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)'
                     }
                 },
-                cutout: '60%'
-            }
-        });
+                tooltip: {
+                    padding: 10,
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+                }
+            },
+            cutout: '60%'
+        };
+        
+        this.chartInstances.loanStatusChart = this.safelyCreateChart('loanStatusChart', 'doughnut', data, options);
     }
     
     renderMemberActivitiesChart(data) {
-        const canvas = document.getElementById('memberActivitiesChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.memberActivitiesChart = new Chart(canvas, {
-            type: 'radar',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 13
-                            }
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 13
                         }
-                    }
-                },
-                scales: {
-                    r: {
-                        pointLabels: {
-                            font: {
-                                size: 12
-                            }
-                        }
-                    }
-                },
-                elements: {
-                    line: {
-                        borderWidth: 3
-                    },
-                    point: {
-                        radius: 4,
-                        hoverRadius: 6
                     }
                 }
+            },
+            scales: {
+                r: {
+                    pointLabels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            elements: {
+                line: {
+                    borderWidth: 3
+                },
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
             }
-        });
+        };
+        
+        this.chartInstances.memberActivitiesChart = this.safelyCreateChart('memberActivitiesChart', 'radar', data, options);
     }
     
     renderBookConditionChart(data) {
-        const canvas = document.getElementById('bookConditionChart');
-        if (!canvas || !data) return;
-        
-        this.chartInstances.bookConditionChart = new Chart(canvas, {
-            type: 'polarArea',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 12
-                            }
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12
                         }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)'
                     }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
                 }
             }
-        });
+        };
+        
+        this.chartInstances.bookConditionChart = this.safelyCreateChart('bookConditionChart', 'polarArea', data, options);
     }
 }
 
@@ -787,6 +809,18 @@ function initDashboard() {
     if (dashboardEl) {
         console.log("Dashboard element found immediately, initializing charts...");
         dashboardController.init();
+        
+        // Add a cleanup handler for window unload
+        window.addEventListener('beforeunload', () => {
+            console.log("Cleaning up chart instances before page unload");
+            // Destroy all charts to prevent memory leaks
+            Object.values(dashboardController.chartInstances).forEach(chart => {
+                if (chart instanceof Chart) {
+                    chart.destroy();
+                }
+            });
+        });
+        
         return;
     }
     
