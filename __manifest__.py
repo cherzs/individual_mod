@@ -3,7 +3,7 @@
     'version' : '1.0',
     'summary' : 'Custom Library',
     'description' : """
-      Modulue fot managing library books and authors
+      Modulue for managing library books and authors
       - Track books, authorts, and genres
       - Generate reports and analytics
     """,
