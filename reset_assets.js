@@ -20,7 +20,6 @@
             try {
                 if (chart && typeof chart.destroy === 'function') {
                     chart.destroy();
-                    console.log("Destroyed a chart instance");
                 }
             } catch (e) {
                 console.error("Error destroying chart:", e);

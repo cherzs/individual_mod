@@ -19,13 +19,10 @@
     script.async = false; // Make sure it loads synchronously
     
     script.onload = function() {
-        console.log("Chart.js loaded successfully");
-        // Dispatch an event that can be listened for
         document.dispatchEvent(new CustomEvent('chartjs_loaded'));
     };
     
     script.onerror = function() {
-        console.error("Failed to load Chart.js from CDN");
     };
     
     // Add to head

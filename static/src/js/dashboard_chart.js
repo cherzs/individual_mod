@@ -51,8 +51,7 @@ class LibraryDashboardController {
                 return;
             }
             
-            console.log(`Dashboard initialization attempt ${this._initAttempts} of ${MAX_INIT_ATTEMPTS}`);
-            console.log("Initializing dashboard charts...");
+            // Dashboard initialization attempt
             
             // Load Chart.js if not already loaded
             await waitForChartJs().catch(e => {
@@ -64,8 +63,6 @@ class LibraryDashboardController {
             if (typeof Chart === 'undefined') {
                 throw new Error("Chart.js was not properly loaded");
             }
-            
-            console.log("Chart.js loaded successfully");
             
             // Initialize chart instances storage
             this.chartInstances = {};
@@ -87,14 +84,12 @@ class LibraryDashboardController {
             
             this.initialized = true;
             this._initAttempts = 0; // Reset counter after successful initialization
-            console.log("Dashboard initialization complete");
         } catch (error) {
             console.error("Dashboard initialization error:", error);
             this.error = error.message || "Initialization failed";
             
             // Try again with a limit
             if (this._initAttempts < MAX_INIT_ATTEMPTS) {
-                console.log(`Retrying dashboard initialization (attempt ${this._initAttempts} of ${MAX_INIT_ATTEMPTS})...`);
                 setTimeout(() => this.init(), 1000); // Longer delay for initialization retries
                 return;
             }
@@ -118,8 +113,6 @@ class LibraryDashboardController {
     
     // Force full width on all parent containers
     forceFullWidth() {
-        console.log("Forcing full width on dashboard containers");
-        
         // List of selectors to apply full width to
         const fullWidthSelectors = [
             '.o_form_view',
@@ -316,8 +309,6 @@ class LibraryDashboardController {
                     return;
                 }
                 
-                console.log(`Chart data loading attempt ${this._loadAttempts} of ${MAX_LOAD_ATTEMPTS}`);
-                
                 // Find the dashboard element
                 const dashboardEl = document.querySelector('.o_dashboard_charts');
                 if (!dashboardEl) {
@@ -328,7 +319,6 @@ class LibraryDashboardController {
                 
                 // Try to fetch from the server - ALWAYS use server data
                 try {
-                    console.log("Fetching chart data from server");
                     await this.fetchDataFromServer();
                     this._loadAttempts = 0; // Reset counter after successful loading
                     resolve();
@@ -337,7 +327,6 @@ class LibraryDashboardController {
                     console.error("Error fetching data from server:", error);
                     
                     // Attempt to find data in the DOM as fallback
-                    console.log("Attempting to find data in DOM as fallback");
                     
                     // Find the graph_data field in various ways Odoo might render it
                     let graphDataValue = null;
@@ -358,7 +347,6 @@ class LibraryDashboardController {
                         if (element) {
                             graphDataValue = element.value || element.textContent;
                             if (graphDataValue) {
-                                console.log(`Found graph_data via selector: ${selector}`);
                                 break;
                             }
                         }
@@ -368,7 +356,6 @@ class LibraryDashboardController {
                     if (graphDataValue) {
                         try {
                             this.chartData = JSON.parse(graphDataValue);
-                            console.log("Successfully parsed chart data from DOM");
                             this._loadAttempts = 0; // Reset counter after successful loading
                             setTimeout(() => {
                                 this.renderCharts();
@@ -583,182 +570,153 @@ class LibraryDashboardController {
     
     // New method to fetch data from the API endpoint
     fetchDataFromServer() {
-        console.log("Fetching dashboard data from server API...");
-        
         return new Promise((resolve, reject) => {
-            // Use Odoo's built-in RPC call mechanism to fetch data from backend
-            const fetchData = async () => {
-                try {
-                    // Try to use Odoo's RPC mechanism
-                    let result;
-                    
-                    if (window.odoo && window.odoo.rpc) {
-                        // Odoo 14+ RPC mechanism
-                        console.log("Using Odoo RPC mechanism to fetch data");
-                        result = await window.odoo.rpc({
-                            route: '/library/dashboard/data',
-                            params: {}
-                        });
-                    } else if (window.rpc) {
-                        // Alternative RPC mechanism
-                        console.log("Using window.rpc to fetch data");
-                        result = await window.rpc('/library/dashboard/data', {});
-                    } else {
-                        // Fallback to jQuery AJAX for older Odoo versions
-                        console.log("Using jQuery AJAX to fetch data");
-                        result = await new Promise((resolve, reject) => {
-                            $.ajax({
-                                url: '/library/dashboard/data',
-                                type: 'POST',
-                                dataType: 'json',
-                                contentType: 'application/json',
-                                data: JSON.stringify({
-                                    jsonrpc: "2.0",
-                                    method: "call",
-                                    params: {},
-                                    id: new Date().getTime()
-                                }),
-                                success: function(response) {
-                                    if (response.error) {
-                                        reject(response.error);
-                                    } else {
-                                        resolve(response.result);
-                                    }
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    reject(errorThrown || textStatus);
+            try {
+                const fetchData = async () => {
+                    try {
+                        // Check if we're inside Odoo's environment
+                        let result;
+                        
+                        if (typeof odoo !== 'undefined' && odoo.define) {
+                            // Attempt to use Odoo's RPC mechanism
+                            try {
+                                if (typeof this._rpc !== 'undefined') {
+                                    result = await this._rpc({
+                                        route: '/library/dashboard/data',
+                                        params: {}
+                                    });
+                                } else if (typeof window._rpc !== 'undefined') {
+                                    result = await window._rpc({
+                                        route: '/library/dashboard/data',
+                                        params: {}
+                                    });
+                                } else if (typeof window.rpc !== 'undefined') {
+                                    result = await window.rpc(
+                                        '/library/dashboard/data', 
+                                        {}
+                                    );
+                                } else {
+                                    // Fallback to jQuery AJAX if Odoo's RPC not available
+                                    result = await $.ajax({
+                                        url: '/library/dashboard/data',
+                                        type: 'POST',
+                                        data: JSON.stringify({}),
+                                        contentType: 'application/json',
+                                        dataType: 'json'
+                                    });
                                 }
+                            } catch (rpcError) {
+                                console.error("RPC error:", rpcError);
+                                reject(rpcError);
+                                return;
+                            }
+                        } else {
+                            // Fallback to regular fetch API
+                            const response = await fetch('/library/dashboard/data', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({}),
                             });
-                        });
-                    }
-                    
-                    console.log("Successfully received backend data:", result);
-                    
-                    if (result && result.status === 'success' && result.data) {
+                            
+                            if (!response.ok) {
+                                throw new Error(`Server responded with status: ${response.status}`);
+                            }
+                            
+                            result = await response.json();
+                        }
+                        
+                        if (!result || !result.success) {
+                            reject(new Error("Server returned an error or invalid data"));
+                            return;
+                        }
+                        
+                        // Parse and store the data
                         this.chartData = result.data;
                         
-                        // Render charts after a small delay
-                        setTimeout(() => {
-                            this.renderCharts();
-                            resolve();
-                        }, 300);
-                    } else if (result && result.data) {
-                        // Direct data format
-                        this.chartData = result.data;
-                        setTimeout(() => {
-                            this.renderCharts();
-                            resolve();
-                        }, 300);
-                    } else {
-                        console.error("Invalid response format from backend:", result);
-                        reject(new Error("Invalid data format received from server"));
+                        // Update the UI immediately
+                        this.renderCharts();
+                        
+                        resolve(result);
+                    } catch (error) {
+                        console.error("Error in fetchData:", error);
+                        reject(error);
                     }
-                } catch (error) {
-                    console.error("Error fetching chart data from backend:", error);
-                    reject(error);
-                }
-            };
-            
-            // Execute the fetch
-            fetchData().catch(error => {
-                console.error("Failed to fetch dashboard data:", error);
+                };
+                
+                fetchData();
+            } catch (error) {
+                console.error("Error setting up fetch:", error);
                 reject(error);
-            });
+            }
         });
     }
     
     renderCharts() {
-        try {
-            // Use retry counter to prevent infinite loops
-            if (!this._renderAttempts) {
-                this._renderAttempts = 0;
-            }
-            
-            // Limit maximum render attempts to 3
-            const MAX_RENDER_ATTEMPTS = 3;
-            
-            // Increment render attempts
-            this._renderAttempts++;
-            
-            // Check if we've exceeded the maximum attempts
-            if (this._renderAttempts > MAX_RENDER_ATTEMPTS) {
-                console.error(`Exceeded maximum chart rendering attempts (${MAX_RENDER_ATTEMPTS}). Aborting.`);
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Limit maximum render attempts
+                const MAX_RENDER_ATTEMPTS = 3;
                 
-                // Display error message to user
-                const dashboardEl = document.querySelector('.o_dashboard_charts');
-                if (dashboardEl) {
-                    const errorMsg = document.createElement('div');
-                    errorMsg.className = 'alert alert-danger mt-3';
-                    errorMsg.innerHTML = `
-                        <strong>Chart Rendering Error</strong>
-                        <p>Failed to render charts after multiple attempts. Please try refreshing the page.</p>
-                        <button class="btn btn-sm btn-primary mt-2" onclick="window.location.reload()">Refresh Page</button>
-                    `;
-                    dashboardEl.prepend(errorMsg);
+                // Increment render attempts
+                this._renderAttempts++;
+                
+                // Check if we've exceeded the maximum attempts
+                if (this._renderAttempts > MAX_RENDER_ATTEMPTS) {
+                    console.error(`Exceeded maximum chart rendering attempts (${MAX_RENDER_ATTEMPTS}). Aborting.`);
+                    this._renderAttempts = 0; // Reset for future attempts
+                    reject(new Error(`Failed to render charts after ${MAX_RENDER_ATTEMPTS} attempts`));
+                    return;
                 }
                 
-                // Reset attempt counter for next time
-                this._renderAttempts = 0;
-                return;
-            }
-            
-            // Log the current attempt
-            console.log(`Chart rendering attempt ${this._renderAttempts} of ${MAX_RENDER_ATTEMPTS}`);
-            
-            // Clear any previous renderings (but don't clear chartData)
-            this.dashboardData = null;
-            this.cleanupAllChartInstances();
-            
-            // Check if we have chart data
-            if (!this.chartData) {
-                console.error("Failed to load dashboard data");
-                return;
-            }
-            
-            console.log("Rendering charts with data:", this.chartData);
-            
-            // Render all charts with their respective render functions
-            this.renderChartWithFallback('loan_trend', this.renderLoanTrendsChart.bind(this));
-            this.renderChartWithFallback('book_categories', this.renderCategoriesChart.bind(this));
-            this.renderChartWithFallback('book_acquisitions', this.renderAcquisitionsChart.bind(this));
-            this.renderChartWithFallback('loan_status', this.renderLoanStatusChart.bind(this));
-            this.renderChartWithFallback('member_activities', this.renderMemberActivitiesChart.bind(this));
-            this.renderChartWithFallback('book_condition', this.renderBookConditionChart.bind(this));
-            // Use 'revenue' key to match the backend data structure
-            this.renderChartWithFallback('revenue', this.renderRevenueChart.bind(this));
-            this.renderChartWithFallback('reading_times', this.renderReadingTimesChart.bind(this));
-            
-            // Setup resize handler
-            this.handleResize();
-            
-            // Reset the attempts counter after successful rendering
-            this._renderAttempts = 0;
-            
-        } catch (error) {
-            console.error("Error rendering charts:", error);
-            
-            // If there was an error, wait a moment and try again (with limit)
-            if (this._renderAttempts < MAX_RENDER_ATTEMPTS) {
-                console.log(`Retrying chart rendering (attempt ${this._renderAttempts} of ${MAX_RENDER_ATTEMPTS})...`);
-                setTimeout(() => this.renderCharts(), 500);
-            } else {
-                console.error(`Giving up after ${MAX_RENDER_ATTEMPTS} failed rendering attempts`);
-                this._renderAttempts = 0; // Reset for future attempts
-                
-                // Show error to user
-                const dashboardEl = document.querySelector('.o_dashboard_charts');
-                if (dashboardEl) {
-                    const errorMsg = document.createElement('div');
-                    errorMsg.className = 'alert alert-danger mt-3';
-                    errorMsg.innerHTML = `
-                        <strong>Chart Rendering Error</strong>
-                        <p>${error.message || 'Unknown error rendering charts'}</p>
-                        <button class="btn btn-sm btn-primary mt-2" onclick="window.location.reload()">Refresh Page</button>
-                    `;
-                    dashboardEl.prepend(errorMsg);
+                // Make sure we have data to render
+                if (!this.chartData) {
+                    console.error("No chart data available for rendering");
+                    reject(new Error("No chart data available"));
+                    return;
                 }
+                
+                // Clear any previous errors and reset chart instances
+                this.error = null;
+                
+                // Render each chart, handling errors individually
+                // Each chart is rendered with a fallback mechanism
+                await Promise.allSettled([
+                    this.renderChartWithFallback('loanTrends', () => this.renderLoanTrendsChart(this.chartData.loanTrends)),
+                    this.renderChartWithFallback('categories', () => this.renderCategoriesChart(this.chartData.categories)),
+                    this.renderChartWithFallback('acquisitions', () => this.renderAcquisitionsChart(this.chartData.acquisitions)),
+                    this.renderChartWithFallback('loanStatus', () => this.renderLoanStatusChart(this.chartData.loanStatus)),
+                    this.renderChartWithFallback('memberActivities', () => this.renderMemberActivitiesChart(this.chartData.memberActivities)),
+                    this.renderChartWithFallback('bookCondition', () => this.renderBookConditionChart(this.chartData.bookCondition)),
+                    this.renderChartWithFallback('revenue', () => this.renderRevenueChart(this.chartData.revenue)),
+                    this.renderChartWithFallback('readingTimes', () => this.renderReadingTimesChart(this.chartData.readingTimes))
+                ]);
+                
+                // Setup resize handling
+                this.handleResize();
+                
+                // Reset attempt counter after successful rendering
+                this._renderAttempts = 0;
+                
+                resolve();
+            } catch (error) {
+                console.error("Error rendering charts:", error);
+                this.error = error.message || "Failed to render charts";
+                
+                // Try again with a limit
+                if (this._renderAttempts < MAX_RENDER_ATTEMPTS) {
+                    setTimeout(() => {
+                        this.renderCharts()
+                            .then(resolve)
+                            .catch(reject);
+                    }, 800); // Wait before retrying
+                    return;
+                }
+                
+                reject(error);
             }
-        }
+        });
     }
     
     renderChartWithFallback(chartKey, renderFunction) {
@@ -1055,127 +1013,102 @@ class LibraryDashboardController {
     // Helper method to safely create a chart
     safelyCreateChart(canvasId, chartType, data, options) {
         try {
-            // Add default options for better appearance
-            const defaultOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: {
-                    duration: 800
-                },
-                layout: {
-                    padding: {
-                        top: 10,
-                        bottom: 10
-                    }
-                }
-            };
-            
-            // Merge default options with provided options
-            const mergedOptions = {
-                ...defaultOptions,
-                ...options
-            };
-            
-            // Set a specific height for the chart
+            // First find the canvas to check if it exists
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
-                console.error(`Canvas element with ID '${canvasId}' not found`);
+                console.error(`Canvas element not found for ${canvasId}`);
                 return null;
             }
             
-            canvas.style.height = '250px';
-            canvas.height = 250;
-            
-            // IMPORTANT: Force destroy any existing Chart instance for this canvas
-            // This addresses the "Canvas is already in use" error
-            
-            // 1. Check our own instance tracker
-            const existingChart = this.chartInstances[canvasId];
-            if (existingChart) {
-                console.log(`Destroying existing chart for ${canvasId} from our tracker`);
+            // Check for existing chart instance and destroy it
+            if (this.chartInstances[canvasId]) {
+                // If chart is already created, destroy it first
                 try {
-                    existingChart.destroy();
-                } catch (e) {
-                    console.warn(`Error destroying chart from our tracker: ${e.message}`);
+                    this.chartInstances[canvasId].destroy();
+                    // Remove from our tracker
+                } catch (destroyError) {
+                    console.error(`Error destroying existing chart for ${canvasId}:`, destroyError);
                 }
+                
+                // Remove from our tracker after destroy attempt
                 delete this.chartInstances[canvasId];
             }
             
-            // 2. Check if there's a Chart instance in the Chart.js registry
-            if (Chart.instances) {
-                // Iterate through all Chart instances
-                Object.values(Chart.instances).forEach(instance => {
+            // Also check the global Chart.instances for any dangling chart with this canvas
+            if (window.Chart && window.Chart.instances) {
+                Object.values(window.Chart.instances).forEach(instance => {
                     if (instance.canvas && instance.canvas.id === canvasId) {
-                        console.log(`Found dangling Chart instance (ID: ${instance.id}) for canvas ${canvasId}, destroying it`);
                         try {
                             instance.destroy();
                         } catch (e) {
-                            console.warn(`Error destroying chart from Chart registry: ${e.message}`);
+                            console.error(`Error destroying Chart.js instance for ${canvasId}:`, e);
                         }
                     }
                 });
             }
             
-            // 3. As a last resort, clear the canvas context completely
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Clean up the canvas to ensure a fresh start
+            const parentNode = canvas.parentNode;
+            const canvasHeight = canvas.height;
+            const canvasWidth = canvas.width;
+            const canvasClasses = canvas.className;
+            const canvasStyle = canvas.getAttribute('style');
+            
+            // Remove and recreate the canvas to ensure a fresh start
+            parentNode.removeChild(canvas);
+            
+            const newCanvas = document.createElement('canvas');
+            newCanvas.id = canvasId;
+            newCanvas.height = canvasHeight;
+            newCanvas.width = canvasWidth;
+            newCanvas.className = canvasClasses;
+            if (canvasStyle) {
+                newCanvas.setAttribute('style', canvasStyle);
             }
             
-            // 4. Create a fresh canvas to replace the old one
-            const parent = canvas.parentNode;
-            if (parent) {
-                const newCanvas = document.createElement('canvas');
-                newCanvas.id = canvasId;
-                newCanvas.style.height = '250px';
-                newCanvas.height = 250;
-                newCanvas.width = canvas.width;
-                newCanvas.className = canvas.className;
-                
-                // Replace old canvas with new one
-                parent.replaceChild(newCanvas, canvas);
-                
-                // Create new chart on the fresh canvas
-                console.log(`Creating new chart for ${canvasId} on fresh canvas`);
-                this.chartInstances[canvasId] = new Chart(
-                    newCanvas,
-                    {
-                        type: chartType,
-                        data: data,
-                        options: mergedOptions
-                    }
-                );
-            } else {
-                // Fallback to using the original canvas if we can't replace it
-                console.log(`Creating new chart for ${canvasId} (fallback method)`);
-                this.chartInstances[canvasId] = new Chart(
-                    canvas,
-                    {
-                        type: chartType,
-                        data: data,
-                        options: mergedOptions
-                    }
-                );
-            }
+            // Add the new canvas back to the DOM
+            parentNode.appendChild(newCanvas);
             
-            return this.chartInstances[canvasId];
+            // Create the chart with the right context
+            let chartInstance;
+            try {
+                const ctx = newCanvas.getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: chartType,
+                    data: data,
+                    options: options
+                });
+                
+                // Store the instance for future reference
+                this.chartInstances[canvasId] = chartInstance;
+                
+                return chartInstance;
+            } catch (chartError) {
+                console.error(`Error creating chart for ${canvasId}:`, chartError);
+                
+                // Fallback method if the normal approach doesn't work
+                try {
+                    // Try again with a simpler approach
+                    const context = newCanvas.getContext('2d');
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    chartInstance = new Chart(context, {
+                        type: chartType,
+                        data: data,
+                        options: options
+                    });
+                    
+                    // Store the instance for future reference
+                    this.chartInstances[canvasId] = chartInstance;
+                    
+                    return chartInstance;
+                } catch (fallbackError) {
+                    console.error(`Fallback chart creation also failed for ${canvasId}:`, fallbackError);
+                    return null;
+                }
+            }
         } catch (error) {
-            console.error(`Error creating chart ${canvasId}:`, error);
-            
-            // Convert canvas ID to chart key
-            const chartKeyMap = {
-                'loanChart': 'loan_trend',
-                'categoryChart': 'book_categories',
-                'acquisitionsChart': 'book_acquisitions',
-                'loanStatusChart': 'loan_status',
-                'memberActivitiesChart': 'member_activities',
-                'bookConditionChart': 'book_condition',
-                'revenueChart': 'revenue',
-                'readingTimesChart': 'reading_times'
-            };
-            
-            const chartKey = chartKeyMap[canvasId] || canvasId;
-            this.displayChartError(chartKey, 'Failed to create chart: ' + error.message);
+            console.error(`Fatal error creating chart ${canvasId}:`, error);
             return null;
         }
     }
@@ -1520,239 +1453,236 @@ class LibraryDashboardController {
     
     // Function to refresh all charts
     refreshAllCharts() {
-        console.log("Refreshing all charts...");
-        
-        // Ensure full width is applied
-        this.forceFullWidth();
-        
-        // Check if refresh is already in progress
-        if (this._refreshing) {
-            console.log("Chart refresh already in progress, ignoring request");
-            return;
-        }
-        
-        this._refreshing = true;
-        
-        // Show loading indicator
-        const dashboardEl = document.querySelector('.o_dashboard_charts');
-        if (dashboardEl) {
-            const loadingIndicator = document.createElement('div');
-            loadingIndicator.className = 'text-center p-3 refresh-indicator';
-            loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p class="mt-2">Refreshing charts...</p>';
-            dashboardEl.appendChild(loadingIndicator);
-            
-            // Update button state if it exists
-            const reloadBtn = document.querySelector('.reload_charts_btn');
-            if (reloadBtn) {
-                reloadBtn.disabled = true;
-                reloadBtn.textContent = 'Refreshing...';
+        return new Promise(async (resolve, reject) => {
+            // Prevent multiple refreshes running simultaneously
+            if (this._refreshing) {
+                console.warn("Chart refresh already in progress, ignoring request");
+                return resolve();
             }
-        }
-        
-        // Destroy existing charts - thorough cleanup
-        this.cleanupAllChartInstances();
-        
-        // Clear chart data to force reload
-        this.chartData = null;
-        
-        // Use the refresh endpoint to force backend recalculation
-        const refreshData = async () => {
+            
+            this._refreshing = true;
+            
             try {
-                // Try to use Odoo's RPC mechanism to call the refresh endpoint
-                let result;
+                // Backup current data in case refresh fails
+                const backupData = this.chartData ? JSON.parse(JSON.stringify(this.chartData)) : null;
                 
-                if (window.odoo && window.odoo.rpc) {
-                    // Odoo 14+ RPC mechanism
-                    console.log("Using Odoo RPC mechanism to refresh data");
-                    result = await window.odoo.rpc({
-                        route: '/library/dashboard/refresh',
-                        params: {}
-                    });
-                } else if (window.rpc) {
-                    // Alternative RPC mechanism
-                    console.log("Using window.rpc to refresh data");
-                    result = await window.rpc('/library/dashboard/refresh', {});
-                } else {
-                    // Fallback to jQuery AJAX for older Odoo versions
-                    console.log("Using jQuery AJAX to refresh data");
-                    result = await new Promise((resolve, reject) => {
-                        $.ajax({
-                            url: '/library/dashboard/refresh',
-                            type: 'POST',
-                            dataType: 'json',
-                            contentType: 'application/json',
-                            data: JSON.stringify({
-                                jsonrpc: "2.0",
-                                method: "call",
-                                params: {},
-                                id: new Date().getTime()
-                            }),
-                            success: function(response) {
-                                if (response.error) {
-                                    reject(response.error);
-                                } else {
-                                    resolve(response.result);
-                                }
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                reject(errorThrown || textStatus);
+                // Show loading indicator on all chart canvases
+                const chartContainers = document.querySelectorAll('.chart_section');
+                chartContainers.forEach(container => {
+                    const loadingOverlay = document.createElement('div');
+                    loadingOverlay.className = 'chart-loading-overlay';
+                    loadingOverlay.innerHTML = `
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    `;
+                    loadingOverlay.style.position = 'absolute';
+                    loadingOverlay.style.top = '0';
+                    loadingOverlay.style.left = '0';
+                    loadingOverlay.style.right = '0';
+                    loadingOverlay.style.bottom = '0';
+                    loadingOverlay.style.backgroundColor = 'rgba(255,255,255,0.7)';
+                    loadingOverlay.style.display = 'flex';
+                    loadingOverlay.style.justifyContent = 'center';
+                    loadingOverlay.style.alignItems = 'center';
+                    loadingOverlay.style.zIndex = '10';
+                    
+                    // Make container position relative for absolute positioning of overlay
+                    container.style.position = 'relative';
+                    container.appendChild(loadingOverlay);
+                });
+                
+                // Function to actually get the fresh data
+                const refreshData = async () => {
+                    try {
+                        let result;
+                        
+                        // Check for available RPC methods
+                        if (typeof this._rpc !== 'undefined') {
+                            result = await this._rpc({
+                                route: '/library/dashboard/data',
+                                params: { refresh: true }
+                            });
+                        } else if (typeof window._rpc !== 'undefined') {
+                            result = await window._rpc({
+                                route: '/library/dashboard/data',
+                                params: { refresh: true }
+                            });
+                        } else if (typeof window.rpc !== 'undefined') {
+                            result = await window.rpc(
+                                '/library/dashboard/data', 
+                                { refresh: true }
+                            );
+                        } else {
+                            // Fallback to jQuery AJAX if rpc not available
+                            result = await $.ajax({
+                                url: '/library/dashboard/data',
+                                type: 'POST',
+                                data: JSON.stringify({ refresh: true }),
+                                contentType: 'application/json',
+                                dataType: 'json'
+                            });
+                        }
+                        
+                        if (!result || !result.success) {
+                            throw new Error("Server returned an error or invalid data");
+                        }
+                        
+                        // Store the new data
+                        this.chartData = result.data;
+                        
+                        // Re-render all charts with new data
+                        await this.renderCharts();
+                        
+                        return result;
+                    } catch (error) {
+                        console.error("Error refreshing data:", error);
+                        throw error;
+                    }
+                };
+                
+                try {
+                    await refreshData();
+                } catch (error) {
+                    console.error("Error during refresh:", error);
+                    
+                    // Restore backup data if refresh failed
+                    if (backupData) {
+                        this.chartData = backupData;
+                        await this.renderCharts();
+                    }
+                    
+                    // Show error message to user
+                    const errorToast = document.createElement('div');
+                    errorToast.className = 'alert alert-danger alert-dismissible fade show';
+                    errorToast.setAttribute('role', 'alert');
+                    errorToast.style.position = 'fixed';
+                    errorToast.style.top = '20px';
+                    errorToast.style.right = '20px';
+                    errorToast.style.zIndex = '9999';
+                    errorToast.innerHTML = `
+                        <strong>Error refreshing charts:</strong> ${error.message || "Unknown error"}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    `;
+                    document.body.appendChild(errorToast);
+                    
+                    // Remove toast after 5 seconds
+                    setTimeout(() => {
+                        if (errorToast.parentNode) {
+                            errorToast.parentNode.removeChild(errorToast);
+                        }
+                    }, 5000);
+                    
+                    // Allow interaction with close button
+                    const closeBtn = errorToast.querySelector('.close');
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', () => {
+                            if (errorToast.parentNode) {
+                                errorToast.parentNode.removeChild(errorToast);
                             }
                         });
-                    });
+                    }
                 }
                 
-                console.log("Successfully refreshed data:", result);
+                // Remove loading overlays
+                document.querySelectorAll('.chart-loading-overlay').forEach(overlay => {
+                    if (overlay.parentNode) {
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                });
                 
-                if (result && result.status === 'success' && result.data) {
-                    this.chartData = result.data;
-                    
-                    // Remove loading indicator
-                    const indicator = document.querySelector('.refresh-indicator');
-                    if (indicator) indicator.remove();
-                    
-                    // Update button state
-                    const reloadBtn = document.querySelector('.reload_charts_btn');
-                    if (reloadBtn) {
-                        reloadBtn.disabled = false;
-                        reloadBtn.textContent = 'Reload Charts';
-                    }
-                    
-                    // Render the charts with fresh data
-                    setTimeout(() => {
-                        this.renderCharts();
-                        this._refreshing = false;
-                    }, 300);
-                    
-                    return;
-                } else if (result && result.data) {
-                    // Direct data format
-                    this.chartData = result.data;
-                    
-                    // Remove loading indicator
-                    const indicator = document.querySelector('.refresh-indicator');
-                    if (indicator) indicator.remove();
-                    
-                    // Update button state
-                    const reloadBtn = document.querySelector('.reload_charts_btn');
-                    if (reloadBtn) {
-                        reloadBtn.disabled = false;
-                        reloadBtn.textContent = 'Reload Charts';
-                    }
-                    
-                    // Render the charts with fresh data
-                    setTimeout(() => {
-                        this.renderCharts();
-                        this._refreshing = false;
-                    }, 300);
-                    
-                    return;
-                } else {
-                    throw new Error("Invalid response format from backend");
-                }
+                this._refreshing = false;
+                resolve();
             } catch (error) {
-                console.error("Error refreshing data:", error);
+                console.error("Fatal error during chart refresh:", error);
                 
-                // Fallback to regular fetch if refresh fails
-                this.fetchDataFromServer()
-                    .then(() => {
-                        // Remove loading indicator
-                        const indicator = document.querySelector('.refresh-indicator');
-                        if (indicator) indicator.remove();
-                        
-                        // Update button state
-                        const reloadBtn = document.querySelector('.reload_charts_btn');
-                        if (reloadBtn) {
-                            reloadBtn.disabled = false;
-                            reloadBtn.textContent = 'Reload Charts';
-                        }
-                        
-                        this._refreshing = false;
-                    })
-                    .catch(fetchError => {
-                        console.error("Error fetching chart data after refresh failed:", fetchError);
-                        
-                        // Remove loading indicator
-                        const indicator = document.querySelector('.refresh-indicator');
-                        if (indicator) indicator.remove();
-                        
-                        // Update button state and show error
-                        const reloadBtn = document.querySelector('.reload_charts_btn');
-                        if (reloadBtn) {
-                            reloadBtn.disabled = false;
-                            reloadBtn.textContent = 'Retry Refresh';
-                        }
-                        
-                        // Show error message
-                        const dashboardEl = document.querySelector('.o_dashboard_charts');
-                        if (dashboardEl) {
-                            dashboardEl.innerHTML += `
-                                <div class="alert alert-danger">
-                                    <p>Error refreshing charts: ${error.message}</p>
-                                </div>
-                            `;
-                        }
-                        
-                        this._refreshing = false;
-                    });
+                // Remove loading overlays even if there was an error
+                document.querySelectorAll('.chart-loading-overlay').forEach(overlay => {
+                    if (overlay.parentNode) {
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                });
+                
+                this._refreshing = false;
+                reject(error);
             }
-        };
-        
-        // Execute the refresh
-        refreshData();
+        });
     }
     
     // New method to thoroughly clean up all chart instances
     cleanupAllChartInstances() {
-        console.log("Thoroughly cleaning up all chart instances...");
-        
-        // 1. Clean up our tracked instances
-        if (this.chartInstances) {
-            Object.entries(this.chartInstances).forEach(([id, chart]) => {
-                if (chart && typeof chart.destroy === 'function') {
+        try {
+            // Destroy all chart instances we're tracking
+            Object.entries(this.chartInstances).forEach(([id, instance]) => {
+                try {
+                    if (instance && typeof instance.destroy === 'function') {
+                        instance.destroy();
+                    }
+                } catch (e) {
+                    console.error(`Error destroying chart instance for ${id}:`, e);
+                }
+            });
+            
+            // Reset tracked instances
+            this.chartInstances = {};
+            
+            // Also look for any global Chart.js instances that may exist
+            if (window.Chart && window.Chart.instances) {
+                Object.values(window.Chart.instances).forEach(instance => {
                     try {
-                        console.log(`Destroying chart instance for ${id}`);
-                        chart.destroy();
+                        if (instance && typeof instance.destroy === 'function') {
+                            instance.destroy();
+                        }
                     } catch (e) {
-                        console.warn(`Error destroying chart ${id}:`, e);
+                        console.error(`Error destroying global Chart.js instance (ID: ${instance.id}):`, e);
+                    }
+                });
+            }
+            
+            // In some cases, Chart.js doesn't properly clean up - force clean known canvases
+            const canvasIds = [
+                'loanChart',
+                'categoryChart',
+                'acquisitionsChart',
+                'loanStatusChart',
+                'memberActivitiesChart',
+                'bookConditionChart',
+                'revenueChart',
+                'readingTimesChart'
+            ];
+            
+            // Replace all canvas elements to ensure clean state
+            canvasIds.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas) {
+                    const parent = canvas.parentNode;
+                    const width = canvas.width;
+                    const height = canvas.height;
+                    const style = canvas.getAttribute('style') || '';
+                    const className = canvas.className;
+                    
+                    // Create a replacement canvas
+                    const newCanvas = document.createElement('canvas');
+                    newCanvas.id = id;
+                    newCanvas.width = width;
+                    newCanvas.height = height;
+                    newCanvas.className = className;
+                    newCanvas.setAttribute('style', style);
+                    
+                    // Replace the old canvas
+                    if (parent) {
+                        parent.replaceChild(newCanvas, canvas);
                     }
                 }
             });
-            this.chartInstances = {};
+            
+            return true;
+        } catch (error) {
+            console.error("Error cleaning up chart instances:", error);
+            return false;
         }
-        
-        // 2. Clean up any global Chart.js instances
-        if (typeof Chart !== 'undefined' && Chart.instances) {
-            Object.values(Chart.instances).forEach(instance => {
-                try {
-                    console.log(`Destroying global Chart.js instance (ID: ${instance.id})`);
-                    instance.destroy();
-                } catch (e) {
-                    console.warn(`Error destroying global chart instance:`, e);
-                }
-            });
-        }
-        
-        // 3. As a last resort, replace all chart canvases with fresh ones
-        const canvasIds = [
-            'loanChart', 'categoryChart', 'acquisitionsChart', 
-            'loanStatusChart', 'memberActivitiesChart', 'bookConditionChart',
-            'revenueChart', 'readingTimesChart'
-        ];
-        
-        canvasIds.forEach(id => {
-            const canvas = document.getElementById(id);
-            if (canvas && canvas.parentNode) {
-                const newCanvas = document.createElement('canvas');
-                newCanvas.id = id;
-                newCanvas.className = canvas.className;
-                newCanvas.style.height = canvas.style.height || '250px';
-                newCanvas.height = canvas.height || 250;
-                newCanvas.width = canvas.width;
-                
-                console.log(`Replacing canvas element for ${id}`);
-                canvas.parentNode.replaceChild(newCanvas, canvas);
-            }
-        });
     }
 }
 
@@ -1762,185 +1692,165 @@ window.LibraryDashboardController = LibraryDashboardController;
 // Patch Chart.js resize to prevent getComputedStyle errors
 function patchChartJsResize() {
     if (typeof Chart !== 'undefined' && Chart.prototype) {
+        // Store the original resize method
         const originalResize = Chart.prototype.resize;
         
+        // Patch the resize method to better handle Odoo's environment
         Chart.prototype.resize = function() {
             try {
-                // Check if canvas is valid before resizing
-                if (!this.canvas || !document.body.contains(this.canvas)) {
-                    console.warn('Attempted to resize a chart with invalid canvas, skipping resize');
-                    return;
-                }
-                
-                // Only call original resize if canvas has dimensions
-                if (this.canvas.offsetWidth > 0 && this.canvas.offsetHeight > 0) {
-                    return originalResize.apply(this, arguments);
-                } else {
-                    console.warn('Canvas has no dimensions, skipping resize');
-                }
-            } catch (e) {
-                console.warn('Error in patched resize method:', e);
-                // Do nothing, just prevent error from bubbling up
+                return originalResize.apply(this, arguments);
+            } catch (error) {
+                console.error('Error in Chart.js resize:', error);
+                // Implement more robust resize fallback if needed
+            }
+        };
+    }
+}
+
+function initDashboard() {
+    // Only execute if we're in a browser environment with a document
+    if (typeof document === 'undefined') return;
+    
+    // Check if element is already available
+    const dashboardEl = document.querySelector('.o_dashboard_charts');
+    
+    if (dashboardEl) {
+        // Dashboard already in DOM, initialize immediately
+        const dashboardController = new LibraryDashboardController();
+        dashboardController.init();
+        window.dashboardController = dashboardController;
+        
+        // Also make refresh function available globally for button
+        window.refreshAllCharts = function() {
+            if (window.dashboardController) {
+                return window.dashboardController.refreshAllCharts();
             }
         };
         
-        console.log('Successfully patched Chart.js resize method');
-    }
-}
-
-// Initialize the dashboard charts
-function initDashboard() {
-    const dashboardController = new LibraryDashboardController();
-    
-    console.log("Starting dashboard initialization check...");
-    
-    // Try to initialize immediately if the element is already available
-    const dashboardEl = document.querySelector('.o_dashboard_charts');
-    if (dashboardEl) {
-        console.log("Dashboard element found immediately, initializing charts...");
-        dashboardController.init();
+        // Alias for compatibility
+        window.reloadDashboard = window.refreshAllCharts;
         
-        // Add a cleanup handler for window unload
+        // Setup cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            console.log("Cleaning up chart instances before page unload");
-            // Safely destroy all charts to prevent memory leaks
-            if (dashboardController.chartInstances) {
-                Object.entries(dashboardController.chartInstances).forEach(([id, chart]) => {
-                    try {
-                        if (chart && typeof chart.destroy === 'function') {
-                            chart.destroy();
-                        }
-                    } catch (e) {
-                        console.warn(`Error destroying chart ${id} during unload:`, e);
-                    }
-                });
+            if (window.dashboardController) {
+                window.dashboardController.cleanupAllChartInstances();
             }
         });
         
-        // Also clean up on view changes
+        // Also setup cleanup when tab becomes hidden (helps with Odoo navigation)
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                console.log("Page hidden, cleaning up charts");
-                dashboardController.cleanupAllChartInstances();
+            if (document.hidden && window.dashboardController) {
+                window.dashboardController.cleanupAllChartInstances();
             }
         });
+    } else {
+        // Set up polling to wait for the element to appear in Odoo's SPA environment
+        let checkCount = 0;
+        const maxChecks = 10;
+        const checkInterval = 500; // ms
         
-        return;
-    }
-    
-    // Otherwise set up polling to check for the element
-    console.log("Dashboard element not found yet, setting up polling...");
-    let checkCount = 0;
-    const checkInterval = setInterval(() => {
-        checkCount++;
-        const dashboardEl = document.querySelector('.o_dashboard_charts');
-        
-        // Also try alternative selectors that might exist
+        // Try different selectors that might contain the dashboard
         const alternativeSelectors = [
-            '.oe_chart',
-            '.o_form_view .oe_chart',
-            '.o_content .o_form_view .oe_chart',
-            '[name="graph_data"]'
+            '.o_dashboard_charts',
+            '.oe_charts', 
+            '.oe_dashboard', 
+            '.o_library_dashboard',
+            '[name="dashboard_charts"]',
+            '[data-chart-container="1"]'
         ];
         
-        let elementFound = !!dashboardEl;
-        
-        // Check alternative selectors if main one not found
-        if (!elementFound) {
+        // Check for the dashboard element
+        const checkForDashboard = () => {
+            checkCount++;
+            
+            // Try all possible selectors
+            let foundElement = null;
             for (const selector of alternativeSelectors) {
                 const el = document.querySelector(selector);
                 if (el) {
-                    elementFound = true;
-                    console.log(`Found alternative dashboard element using selector: ${selector}`);
-                    // Create a dashboard charts container if it doesn't exist
-                    if (!document.querySelector('.o_dashboard_charts')) {
-                        const container = document.createElement('div');
-                        container.className = 'o_dashboard_charts';
-                        el.appendChild(container);
-                    }
+                    foundElement = el;
                     break;
                 }
             }
-        }
-        
-        if (elementFound) {
-            clearInterval(checkInterval);
-            console.log("Dashboard element found on attempt " + checkCount + ", initializing charts...");
-            dashboardController.init();
-            window.currentDashboardController = dashboardController;
-        } else if (checkCount >= 20) {
-            clearInterval(checkInterval);
-            console.warn("Gave up looking for dashboard element after 20 attempts");
-        }
-    }, 300);
-    
-    // Stop checking after 10 seconds to prevent infinite polling
-    setTimeout(() => {
-        clearInterval(checkInterval);
-    }, 10000);
-}
-
-// Store the current controller globally for access in events
-window.currentDashboardController = null;
-
-// Initialize on both DOM content loaded and when view changes (Odoo specific)
-document.addEventListener('DOMContentLoaded', () => {
-    // Apply Chart.js patch
-    patchChartJsResize();
-    
-    // Initialize dashboard
-    initDashboard();
-    
-    // Set up observer for view changes
-    const targetNode = document.body;
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.addedNodes && mutation.addedNodes.length) {
-                for (const node of mutation.addedNodes) {
-                    if (node.classList && 
-                        (node.classList.contains('o_form_view') || 
-                         node.classList.contains('o_content') ||
-                         node.querySelector('.o_dashboard_charts'))) {
-                        console.log("View change detected, checking for dashboard...");
-                        
-                        // Clean up any existing dashboard before initializing a new one
-                        if (window.currentDashboardController) {
-                            try {
-                                window.currentDashboardController.cleanupAllChartInstances();
-                            } catch (e) {
-                                console.warn("Error cleaning up previous dashboard:", e);
-                            }
-                        }
-                        
-                        // Initialize with a delay to ensure DOM is ready
-                        setTimeout(() => {
-                            const dashboardController = new LibraryDashboardController();
-                            window.currentDashboardController = dashboardController;
-                            dashboardController.init();
-                        }, 500);
-                        break;
+            
+            if (foundElement) {
+                // Dashboard found
+                const dashboardController = new LibraryDashboardController();
+                dashboardController.init();
+                window.dashboardController = dashboardController;
+                
+                // Make refresh function available globally
+                window.refreshAllCharts = function() {
+                    if (window.dashboardController) {
+                        return window.dashboardController.refreshAllCharts();
                     }
-                }
+                };
+                
+                // Alias for compatibility
+                window.reloadDashboard = window.refreshAllCharts;
+            } else if (checkCount < maxChecks) {
+                // Keep checking
+                setTimeout(checkForDashboard, checkInterval);
+            } else {
+                // Give up after max checks
+                console.warn(`Dashboard element not found after ${maxChecks} attempts`);
             }
-        }
-    });
-    
-    observer.observe(targetNode, { childList: true, subtree: true });
-});
-
-// Add a global reload function for the button
-window.refreshAllCharts = function() {
-    if (window.currentDashboardController) {
-        window.currentDashboardController.refreshAllCharts();
-    } else {
-        console.warn("No active dashboard controller found, creating new one");
-        const dashboardController = new LibraryDashboardController();
-        window.currentDashboardController = dashboardController;
-        dashboardController.init().then(() => {
-            dashboardController.refreshAllCharts();
+        };
+        
+        // Start checking
+        setTimeout(checkForDashboard, 100);
+        
+        // Handle Odoo view changes - important for SPA navigation
+        document.addEventListener('DOMSubtreeModified', function(e) {
+            // Only check meaningful DOM changes
+            if (e.target.classList && 
+                (e.target.classList.contains('o_content') || 
+                 e.target.classList.contains('o_form_view') ||
+                 e.target.classList.contains('o_main_content'))) {
+                
+                // Wait a moment for the DOM to stabilize
+                setTimeout(() => {
+                    // Clean up any existing chart controller
+                    if (window.dashboardController) {
+                        window.dashboardController.cleanupAllChartInstances();
+                    }
+                    
+                    // Check for dashboard in the new view
+                    let foundElement = null;
+                    for (const selector of alternativeSelectors) {
+                        const el = document.querySelector(selector);
+                        if (el) {
+                            foundElement = el;
+                            break;
+                        }
+                    }
+                    
+                    if (foundElement) {
+                        // Initialize new dashboard for this view
+                        const dashboardController = new LibraryDashboardController();
+                        dashboardController.init();
+                        window.dashboardController = dashboardController;
+                    }
+                }, 300);
+            }
         });
     }
-};
+}
 
-// Export for testing and global access
-window.initLibraryDashboard = initDashboard; 
+// Patch Chart.js resize method for better compatibility
+if (typeof Chart !== 'undefined') {
+    patchChartJsResize();
+}
+
+// Initialize the dashboard when the DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+    initDashboard();
+}
+
+// Re-export for module usage
+export default {
+    initDashboard,
+    LibraryDashboardController
+}; 
