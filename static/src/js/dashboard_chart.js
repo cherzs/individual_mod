@@ -171,7 +171,7 @@ class LibraryDashboardController {
                     min-width: 300px !important;
                     max-width: calc(50% - 10px) !important;
                     width: calc(50% - 10px) !important;
-                    margin-bottom: 15px !important;
+                    margin-bottom: 15px !important;                  
                 }
                 
                 .chart_row {
