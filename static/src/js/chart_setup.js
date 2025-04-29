@@ -55,4 +55,32 @@ export function waitForChartJs() {
             }
         }, { once: true });
     });
+}
+
+// Export a function to safely destroy a chart
+export function safelyDestroyChart(canvasId) {
+    try {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return false;
+        
+        // Check if Chart.js has a method to get chart by canvas
+        if (typeof Chart !== 'undefined' && Chart.getChart) {
+            const chart = Chart.getChart(canvas);
+            if (chart) {
+                chart.destroy();
+                return true;
+            }
+        }
+        
+        // Fallback: try to clear the canvas
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        return false;
+    } catch (error) {
+        console.error(`Error safely destroying chart at canvas #${canvasId}:`, error);
+        return false;
+    }
 } 
