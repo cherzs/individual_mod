@@ -26,3 +26,8 @@ build/
 env/
 venv/
 ENV/
+
+# Explicitly ignore these directories
+controllers/__pycache__/
+models/__pycache__/
+__pycache__/
