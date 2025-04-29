@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Books Demo Data -->
+        <record id="book_harry_potter_1" model="custom.book">
+            <field name="name">Harry Potter and the Philosopher's Stone</field>
+            <field name="isbn">9780747532743</field>
+            <field name="author_id" ref="author_demo_1"/>
+            <field name="genre_id" ref="genre_fantasy"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fantasy'), ref('genre_fiction')])]"/>
+            <field name="date_published">1997-06-26</field>
+            <field name="publisher">Bloomsbury Publishing</field>
+            <field name="pages">223</field>
+            <field name="price">19.99</field>
+            <field name="description">The first novel in the Harry Potter series follows a young wizard, Harry Potter, who discovers his magical heritage on his eleventh birthday.</field>
+            <field name="acquisition_date">2022-01-05</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_harry_potter_2" model="custom.book">
+            <field name="name">Harry Potter and the Chamber of Secrets</field>
+            <field name="isbn">9780747538486</field>
+            <field name="author_id" ref="author_demo_1"/>
+            <field name="genre_id" ref="genre_fantasy"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fantasy'), ref('genre_fiction')])]"/>
+            <field name="date_published">1998-07-02</field>
+            <field name="publisher">Bloomsbury Publishing</field>
+            <field name="pages">251</field>
+            <field name="price">19.99</field>
+            <field name="description">Harry returns to Hogwarts for his second year, where he must face a new danger: the Chamber of Secrets has been opened.</field>
+            <field name="acquisition_date">2022-01-05</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_the_shining" model="custom.book">
+            <field name="name">The Shining</field>
+            <field name="isbn">9780307743657</field>
+            <field name="author_id" ref="author_demo_2"/>
+            <field name="genre_id" ref="genre_horror"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_horror'), ref('genre_thriller')])]"/>
+            <field name="date_published">1977-01-28</field>
+            <field name="publisher">Doubleday</field>
+            <field name="pages">447</field>
+            <field name="price">15.95</field>
+            <field name="description">Jack Torrance takes a job as an off-season caretaker at the Overlook Hotel. His son Danny begins to have psychic premonitions about the hotel's horrific past.</field>
+            <field name="acquisition_date">2022-02-10</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_murder_on_orient" model="custom.book">
+            <field name="name">Murder on the Orient Express</field>
+            <field name="isbn">9780062693662</field>
+            <field name="author_id" ref="author_demo_3"/>
+            <field name="genre_id" ref="genre_mystery"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_mystery'), ref('genre_fiction')])]"/>
+            <field name="date_published">1934-01-01</field>
+            <field name="publisher">Collins Crime Club</field>
+            <field name="pages">256</field>
+            <field name="price">12.99</field>
+            <field name="description">Hercule Poirot investigates the murder of an American businessman aboard the Orient Express.</field>
+            <field name="acquisition_date">2022-02-15</field>
+            <field name="condition">new</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_1984" model="custom.book">
+            <field name="name">1984</field>
+            <field name="isbn">9780451524935</field>
+            <field name="author_id" ref="author_demo_6"/>
+            <field name="genre_id" ref="genre_scifi"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_scifi'), ref('genre_fiction')])]"/>
+            <field name="date_published">1949-06-08</field>
+            <field name="publisher">Secker &amp; Warburg</field>
+            <field name="pages">328</field>
+            <field name="price">14.99</field>
+            <field name="description">A dystopian novel set in a totalitarian regime where Big Brother is always watching.</field>
+            <field name="acquisition_date">2022-03-01</field>
+            <field name="condition">good</field>
+            <field name="state">borrowed</field>
+        </record>
+        
+        <record id="book_pride_and_prejudice" model="custom.book">
+            <field name="name">Pride and Prejudice</field>
+            <field name="isbn">9780141439518</field>
+            <field name="author_id" ref="author_demo_5"/>
+            <field name="genre_id" ref="genre_romance"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_romance'), ref('genre_fiction')])]"/>
+            <field name="date_published">1813-01-28</field>
+            <field name="publisher">T. Egerton, Whitehall</field>
+            <field name="pages">432</field>
+            <field name="price">9.99</field>
+            <field name="description">A romantic novel of manners that follows the character development of Elizabeth Bennet.</field>
+            <field name="acquisition_date">2022-03-10</field>
+            <field name="condition">fair</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_lord_of_rings" model="custom.book">
+            <field name="name">The Lord of the Rings</field>
+            <field name="isbn">9780618640157</field>
+            <field name="author_id" ref="author_demo_7"/>
+            <field name="genre_id" ref="genre_fantasy"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fantasy'), ref('genre_fiction')])]"/>
+            <field name="date_published">1954-07-29</field>
+            <field name="publisher">Allen &amp; Unwin</field>
+            <field name="pages">1178</field>
+            <field name="price">29.99</field>
+            <field name="description">An epic high-fantasy novel set in Middle-earth, following the quest to destroy the One Ring.</field>
+            <field name="acquisition_date">2022-03-15</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_100_years_solitude" model="custom.book">
+            <field name="name">One Hundred Years of Solitude</field>
+            <field name="isbn">9780060883287</field>
+            <field name="author_id" ref="author_demo_8"/>
+            <field name="genre_id" ref="genre_fiction"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fiction')])]"/>
+            <field name="date_published">1967-05-30</field>
+            <field name="publisher">Harper &amp; Row</field>
+            <field name="pages">417</field>
+            <field name="price">16.99</field>
+            <field name="description">The multi-generational story of the Buendía family in the fictional town of Macondo.</field>
+            <field name="acquisition_date">2022-04-05</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_american_gods" model="custom.book">
+            <field name="name">American Gods</field>
+            <field name="isbn">9780062572110</field>
+            <field name="author_id" ref="author_demo_9"/>
+            <field name="genre_id" ref="genre_fantasy"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fantasy'), ref('genre_fiction'), ref('genre_scifi')])]"/>
+            <field name="date_published">2001-06-19</field>
+            <field name="publisher">William Morrow</field>
+            <field name="pages">465</field>
+            <field name="price">18.99</field>
+            <field name="description">A novel about old and new gods in modern America.</field>
+            <field name="acquisition_date">2022-04-10</field>
+            <field name="condition">new</field>
+            <field name="state">borrowed</field>
+        </record>
+        
+        <record id="book_beloved" model="custom.book">
+            <field name="name">Beloved</field>
+            <field name="isbn">9781400033416</field>
+            <field name="author_id" ref="author_demo_10"/>
+            <field name="genre_id" ref="genre_fiction"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fiction'), ref('genre_history')])]"/>
+            <field name="date_published">1987-09-02</field>
+            <field name="publisher">Alfred A. Knopf</field>
+            <field name="pages">324</field>
+            <field name="price">15.95</field>
+            <field name="description">A novel inspired by the life of Margaret Garner, an African American who escaped slavery.</field>
+            <field name="acquisition_date">2022-04-15</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_norwegian_wood" model="custom.book">
+            <field name="name">Norwegian Wood</field>
+            <field name="isbn">9780375704024</field>
+            <field name="author_id" ref="author_demo_4"/>
+            <field name="genre_id" ref="genre_fiction"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fiction'), ref('genre_romance')])]"/>
+            <field name="date_published">1987-08-04</field>
+            <field name="publisher">Kodansha</field>
+            <field name="pages">296</field>
+            <field name="price">15.00</field>
+            <field name="description">A nostalgic story of loss and sexuality set in Tokyo during the late 1960s.</field>
+            <field name="acquisition_date">2022-05-01</field>
+            <field name="condition">good</field>
+            <field name="state">available</field>
+        </record>
+        
+        <record id="book_it" model="custom.book">
+            <field name="name">IT</field>
+            <field name="isbn">9781501142970</field>
+            <field name="author_id" ref="author_demo_2"/>
+            <field name="genre_id" ref="genre_horror"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_horror'), ref('genre_thriller')])]"/>
+            <field name="date_published">1986-09-15</field>
+            <field name="publisher">Viking Press</field>
+            <field name="pages">1138</field>
+            <field name="price">19.99</field>
+            <field name="description">A novel about seven children who are terrorized by an evil entity that exploits the fears of its victims.</field>
+            <field name="acquisition_date">2022-05-10</field>
+            <field name="condition">good</field>
+            <field name="state">lost</field>
+        </record>
+        
+        <record id="book_the_hobbit" model="custom.book">
+            <field name="name">The Hobbit</field>
+            <field name="isbn">9780618260300</field>
+            <field name="author_id" ref="author_demo_7"/>
+            <field name="genre_id" ref="genre_fantasy"/>
+            <field name="genre_ids" eval="[(6, 0, [ref('genre_fantasy'), ref('genre_fiction')])]"/>
+            <field name="date_published">1937-09-21</field>
+            <field name="publisher">George Allen &amp; Unwin</field>
+            <field name="pages">310</field>
+            <field name="price">14.99</field>
+            <field name="description">The adventures of Bilbo Baggins, a hobbit who embarks on an adventure with a group of dwarves.</field>
+            <field name="acquisition_date">2022-05-15</field>
+            <field name="condition">fair</field>
+            <field name="state">available</field>
+        </record>
+    </data>
+</odoo> 

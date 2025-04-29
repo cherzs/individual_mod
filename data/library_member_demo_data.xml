@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Create Partner records first for library members -->
+        <record id="partner_john_doe" model="res.partner">
+            <field name="name">John Doe</field>
+            <field name="email">john.doe@example.com</field>
+            <field name="phone">+1 555-123-4567</field>
+            <field name="street">123 Main Street</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_jane_smith" model="res.partner">
+            <field name="name">Jane Smith</field>
+            <field name="email">jane.smith@example.com</field>
+            <field name="phone">+1 555-987-6543</field>
+            <field name="street">456 Oak Avenue</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_bob_johnson" model="res.partner">
+            <field name="name">Bob Johnson</field>
+            <field name="email">bob.johnson@example.com</field>
+            <field name="phone">+1 555-246-8135</field>
+            <field name="street">789 Pine Road</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_emma_brown" model="res.partner">
+            <field name="name">Emma Brown</field>
+            <field name="email">emma.brown@example.com</field>
+            <field name="phone">+1 555-369-2580</field>
+            <field name="street">101 Cedar Lane</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_michael_davis" model="res.partner">
+            <field name="name">Michael Davis</field>
+            <field name="email">michael.davis@example.com</field>
+            <field name="phone">+1 555-741-9630</field>
+            <field name="street">202 Maple Drive</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_sarah_wilson" model="res.partner">
+            <field name="name">Sarah Wilson</field>
+            <field name="email">sarah.wilson@example.com</field>
+            <field name="phone">+1 555-852-9631</field>
+            <field name="street">303 Elm Street</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_james_taylor" model="res.partner">
+            <field name="name">James Taylor</field>
+            <field name="email">james.taylor@example.com</field>
+            <field name="phone">+1 555-963-8520</field>
+            <field name="street">404 Birch Boulevard</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <record id="partner_olivia_anderson" model="res.partner">
+            <field name="name">Olivia Anderson</field>
+            <field name="email">olivia.anderson@example.com</field>
+            <field name="phone">+1 555-741-8523</field>
+            <field name="street">505 Walnut Way</field>
+            <field name="city">Springfield</field>
+            <field name="zip">12345</field>
+            <field name="country_id" ref="base.us"/>
+        </record>
+        
+        <!-- Now create library members -->
+        <record id="member_john_doe" model="custom.library.member">
+            <field name="partner_id" ref="partner_john_doe"/>
+            <field name="member_number">MEM00001</field>
+            <field name="membership_date">2022-01-10</field>
+            <field name="membership_type">standard</field>
+            <field name="notes">Regular library visitor, interested in fiction books.</field>
+        </record>
+        
+        <record id="member_jane_smith" model="custom.library.member">
+            <field name="partner_id" ref="partner_jane_smith"/>
+            <field name="member_number">MEM00002</field>
+            <field name="membership_date">2022-01-15</field>
+            <field name="membership_type">premium</field>
+            <field name="notes">Avid reader, particularly enjoys fantasy books.</field>
+        </record>
+        
+        <record id="member_bob_johnson" model="custom.library.member">
+            <field name="partner_id" ref="partner_bob_johnson"/>
+            <field name="member_number">MEM00003</field>
+            <field name="membership_date">2022-02-05</field>
+            <field name="membership_type">standard</field>
+            <field name="notes">Prefers non-fiction and history books.</field>
+        </record>
+        
+        <record id="member_emma_brown" model="custom.library.member">
+            <field name="partner_id" ref="partner_emma_brown"/>
+            <field name="member_number">MEM00004</field>
+            <field name="membership_date">2022-02-20</field>
+            <field name="membership_type">student</field>
+            <field name="notes">University student studying literature.</field>
+        </record>
+        
+        <record id="member_michael_davis" model="custom.library.member">
+            <field name="partner_id" ref="partner_michael_davis"/>
+            <field name="member_number">MEM00005</field>
+            <field name="membership_date">2022-03-01</field>
+            <field name="membership_type">standard</field>
+            <field name="notes">Mystery and thriller fan.</field>
+        </record>
+        
+        <record id="member_sarah_wilson" model="custom.library.member">
+            <field name="partner_id" ref="partner_sarah_wilson"/>
+            <field name="member_number">MEM00006</field>
+            <field name="membership_date">2022-03-15</field>
+            <field name="membership_type">senior</field>
+            <field name="notes">Enjoys classic literature and poetry.</field>
+        </record>
+        
+        <record id="member_james_taylor" model="custom.library.member">
+            <field name="partner_id" ref="partner_james_taylor"/>
+            <field name="member_number">MEM00007</field>
+            <field name="membership_date">2022-04-05</field>
+            <field name="membership_type">premium</field>
+            <field name="notes">Science fiction enthusiast.</field>
+        </record>
+        
+        <record id="member_olivia_anderson" model="custom.library.member">
+            <field name="partner_id" ref="partner_olivia_anderson"/>
+            <field name="member_number">MEM00008</field>
+            <field name="membership_date">2022-04-20</field>
+            <field name="membership_type">student</field>
+            <field name="notes">Frequently borrows books for research.</field>
+        </record>
+    </data>
+</odoo> 

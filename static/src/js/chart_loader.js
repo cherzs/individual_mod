@@ -18,26 +18,20 @@
     function initCharts() {
         // Make sure LibraryDashboardController is defined
         if (typeof LibraryDashboardController === 'undefined') {
-            console.error('LibraryDashboardController is not defined, checking for global availability');
-            
             // Try to find the class through the window object
             if (window.LibraryDashboardController) {
-                console.log('Found LibraryDashboardController in window object');
                 window.LibraryDashboardController = window.LibraryDashboardController;
             } else if (window.initLibraryDashboard) {
-                console.log('Using initLibraryDashboard function instead');
                 window.initLibraryDashboard();
                 return;
             } else {
-                console.error('LibraryDashboardController not found, trying to load dashboard directly');
                 // Attempt to directly initialize the dashboard
                 const dashboardInit = document.createElement('script');
                 dashboardInit.textContent = `
                     try { 
                         if (window.initDashboard) window.initDashboard();
-                        else console.error('Dashboard initialization functions not found');
                     } catch (e) { 
-                        console.error('Error in direct dashboard init:', e);
+                        // Dashboard initialization error
                     }
                 `;
                 document.head.appendChild(dashboardInit);
@@ -48,7 +42,6 @@
         // Initialize on appropriate elements
         document.querySelectorAll('.o_dashboard_charts').forEach(el => {
             if (el.getAttribute('data-initialized') !== 'true') {
-                console.log('Initializing charts on element:', el);
                 el.setAttribute('data-initialized', 'true');
                 
                 // Create loading indicator
@@ -66,8 +59,6 @@
                         try {
                             // Check again if LibraryDashboardController is available
                             if (typeof LibraryDashboardController === 'undefined') {
-                                console.error('LibraryDashboardController still not defined after loading Chart.js');
-                                
                                 // Add manual init button
                                 el.innerHTML = `
                                     <div class="alert alert-warning">
@@ -82,15 +73,12 @@
                             
                             // Initialize dashboard controller
                             if (!dashboardController) {
-                                console.log('Creating new dashboard controller');
                                 dashboardController = new LibraryDashboardController();
                                 dashboardController.init();
                             } else {
-                                console.log('Using existing dashboard controller');
                                 dashboardController.init();
                             }
                         } catch (e) {
-                            console.error('Error initializing dashboard controller:', e);
                             el.innerHTML = `
                                 <div class="alert alert-danger">
                                     <p>Error initializing dashboard: ${e.message}</p>
@@ -104,7 +92,6 @@
                     .catch(error => {
                         // Handle error
                         loadingIndicator.remove();
-                        console.error('Failed to initialize charts:', error);
                         el.innerHTML = `
                             <div class="alert alert-danger">
                                 <p>Failed to load charts: ${error.message}</p>
@@ -123,7 +110,6 @@
         return new Promise((resolve, reject) => {
             // If Chart.js is already available, resolve immediately
             if (typeof Chart !== 'undefined') {
-                console.log('Chart.js already loaded');
                 resolve();
                 return;
             }
@@ -136,19 +122,16 @@
             
             // Increment attempts and try to load
             loadAttempts++;
-            console.log(`Loading Chart.js from CDN (attempt ${loadAttempts})`);
             
             const script = document.createElement('script');
             script.src = CHART_CDN;
             script.async = true;
             
             script.onload = function() {
-                console.log('Chart.js loaded successfully from CDN');
                 resolve();
             };
             
             script.onerror = function() {
-                console.error('Failed to load Chart.js from CDN');
                 reject(new Error('Failed to load Chart.js from CDN'));
             };
             
@@ -159,10 +142,8 @@
     // Function to manually reload the dashboard
     function reloadDashboard() {
         if (dashboardController) {
-            console.log('Manually reloading dashboard');
             dashboardController.refreshAllCharts();
         } else {
-            console.log('No dashboard controller to reload, initializing charts');
             initCharts();
         }
     }
@@ -185,7 +166,6 @@
                         if (node.nodeType === 1 && node.querySelector) {
                             const dashboardEl = node.querySelector('.o_dashboard_charts');
                             if (dashboardEl) {
-                                console.log('Dashboard view detected, initializing charts');
                                 setTimeout(initCharts, 500);
                                 break;
                             }

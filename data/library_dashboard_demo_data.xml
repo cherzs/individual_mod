@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Library Dashboard Demo Data -->
+        <record id="library_dashboard_demo" model="custom.library.dashboard">
+            <field name="name">Library Dashboard</field>
+            <!-- The rest of the fields are computed, so no need to set them directly -->
+        </record>
+    </data>
+</odoo> 

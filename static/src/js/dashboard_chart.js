@@ -360,7 +360,7 @@ class LibraryDashboardController {
                     
                     // Last resort: Create dummy data so something displays
                     // This prevents the dashboard from crashing completely
-                    this.chartData = this._createDummyChartData();
+                    // this.chartData = this._createDummyChartData();
                     
                     // Show notification about using demo data
                     const notification = document.createElement('div');
@@ -430,131 +430,131 @@ class LibraryDashboardController {
     }
     
     // Create dummy chart data for fallback when server and DOM data are unavailable
-    _createDummyChartData() {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    // _createDummyChartData() {
+    //     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
         
-        return {
-            loan_trend: {
-                labels: months,
-                datasets: [{
-                    label: 'Sample Book Loans',
-                    data: [12, 19, 15, 22, 18, 25],
-                    backgroundColor: 'rgba(26, 115, 232, 0.2)',
-                    borderColor: 'rgba(26, 115, 232, 0.8)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            book_categories: {
-                labels: ['Fiction', 'Science', 'History', 'Biography', 'Art'],
-                datasets: [{
-                    data: [30, 20, 15, 10, 25],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            book_acquisitions: {
-                labels: months,
-                datasets: [{
-                    label: 'Sample New Books',
-                    data: [5, 8, 12, 7, 10, 15],
-                    backgroundColor: 'rgba(66, 133, 244, 0.8)',
-                    borderColor: 'rgba(66, 133, 244, 1)',
-                    borderWidth: 1
-                }]
-            },
-            loan_status: {
-                labels: ['Active', 'Returned', 'Overdue', 'Lost'],
-                datasets: [{
-                    data: [45, 30, 15, 10],
-                    backgroundColor: [
-                        'rgba(52, 168, 83, 0.8)',
-                        'rgba(66, 133, 244, 0.8)',
-                        'rgba(251, 188, 5, 0.8)',
-                        'rgba(234, 67, 53, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(52, 168, 83, 1)',
-                        'rgba(66, 133, 244, 1)',
-                        'rgba(251, 188, 5, 1)',
-                        'rgba(234, 67, 53, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            member_activities: {
-                labels: ['Loans', 'Returns', 'Overdue', 'Active Members', 'New Members'],
-                datasets: [
-                    {
-                        label: 'Standard Members',
-                        data: [65, 59, 20, 40, 10],
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgba(54, 162, 235, 1)'
-                    },
-                    {
-                        label: 'Premium Members',
-                        data: [28, 25, 8, 15, 5],
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)'
-                    }
-                ]
-            },
-            book_condition: {
-                labels: ['New', 'Good', 'Fair', 'Poor', 'Damaged'],
-                datasets: [{
-                    data: [35, 25, 20, 15, 5],
-                    backgroundColor: [
-                        'rgba(52, 168, 83, 0.8)',
-                        'rgba(66, 133, 244, 0.8)',
-                        'rgba(251, 188, 5, 0.8)',
-                        'rgba(234, 67, 53, 0.8)',
-                        'rgba(0, 0, 0, 0.5)'
-                    ]
-                }]
-            },
-            revenue: {
-                labels: months,
-                datasets: [{
-                    label: 'Sample Revenue ($)',
-                    data: [125, 150, 175, 200, 220, 250],
-                    backgroundColor: 'rgba(0, 184, 169, 0.8)',
-                    borderColor: 'rgba(0, 184, 169, 1)',
-                    borderWidth: 1
-                }]
-            },
-            reading_times: {
-                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                datasets: [
-                    {
-                        label: 'Weekday Borrows',
-                        data: [12, 15, 18, 14, 16, 0, 0],
-                        backgroundColor: 'rgba(103, 58, 183, 0.8)',
-                        borderColor: 'rgba(103, 58, 183, 1)'
-                    },
-                    {
-                        label: 'Weekend Borrows',
-                        data: [0, 0, 0, 0, 0, 25, 30],
-                        backgroundColor: 'rgba(186, 104, 200, 0.8)',
-                        borderColor: 'rgba(186, 104, 200, 1)'
-                    }
-                ]
-            }
-        };
-    }
+    //     return {
+    //         loan_trend: {
+    //             labels: months,
+    //             datasets: [{
+    //                 label: 'Sample Book Loans',
+    //                 data: [12, 19, 15, 22, 18, 25],
+    //                 backgroundColor: 'rgba(26, 115, 232, 0.2)',
+    //                 borderColor: 'rgba(26, 115, 232, 0.8)',
+    //                 borderWidth: 2,
+    //                 tension: 0.4,
+    //                 fill: true
+    //             }]
+    //         },
+    //         book_categories: {
+    //             labels: ['Fiction', 'Science', 'History', 'Biography', 'Art'],
+    //             datasets: [{
+    //                 data: [30, 20, 15, 10, 25],
+    //                 backgroundColor: [
+    //                     'rgba(255, 99, 132, 0.7)',
+    //                     'rgba(54, 162, 235, 0.7)',
+    //                     'rgba(255, 206, 86, 0.7)',
+    //                     'rgba(75, 192, 192, 0.7)',
+    //                     'rgba(153, 102, 255, 0.7)'
+    //                 ],
+    //                 borderColor: [
+    //                     'rgba(255, 99, 132, 1)',
+    //                     'rgba(54, 162, 235, 1)',
+    //                     'rgba(255, 206, 86, 1)',
+    //                     'rgba(75, 192, 192, 1)',
+    //                     'rgba(153, 102, 255, 1)'
+    //                 ],
+    //                 borderWidth: 1
+    //             }]
+    //         },
+    //         book_acquisitions: {
+    //             labels: months,
+    //             datasets: [{
+    //                 label: 'Sample New Books',
+    //                 data: [5, 8, 12, 7, 10, 15],
+    //                 backgroundColor: 'rgba(66, 133, 244, 0.8)',
+    //                 borderColor: 'rgba(66, 133, 244, 1)',
+    //                 borderWidth: 1
+    //             }]
+    //         },
+    //         loan_status: {
+    //             labels: ['Active', 'Returned', 'Overdue', 'Lost'],
+    //             datasets: [{
+    //                 data: [45, 30, 15, 10],
+    //                 backgroundColor: [
+    //                     'rgba(52, 168, 83, 0.8)',
+    //                     'rgba(66, 133, 244, 0.8)',
+    //                     'rgba(251, 188, 5, 0.8)',
+    //                     'rgba(234, 67, 53, 0.8)'
+    //                 ],
+    //                 borderColor: [
+    //                     'rgba(52, 168, 83, 1)',
+    //                     'rgba(66, 133, 244, 1)',
+    //                     'rgba(251, 188, 5, 1)',
+    //                     'rgba(234, 67, 53, 1)'
+    //                 ],
+    //                 borderWidth: 1
+    //             }]
+    //         },
+    //         member_activities: {
+    //             labels: ['Loans', 'Returns', 'Overdue', 'Active Members', 'New Members'],
+    //             datasets: [
+    //                 {
+    //                     label: 'Standard Members',
+    //                     data: [65, 59, 20, 40, 10],
+    //                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
+    //                     borderColor: 'rgba(54, 162, 235, 1)'
+    //                 },
+    //                 {
+    //                     label: 'Premium Members',
+    //                     data: [28, 25, 8, 15, 5],
+    //                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
+    //                     borderColor: 'rgba(255, 99, 132, 1)'
+    //                 }
+    //             ]
+    //         },
+    //         book_condition: {
+    //             labels: ['New', 'Good', 'Fair', 'Poor', 'Damaged'],
+    //             datasets: [{
+    //                 data: [35, 25, 20, 15, 5],
+    //                 backgroundColor: [
+    //                     'rgba(52, 168, 83, 0.8)',
+    //                     'rgba(66, 133, 244, 0.8)',
+    //                     'rgba(251, 188, 5, 0.8)',
+    //                     'rgba(234, 67, 53, 0.8)',
+    //                     'rgba(0, 0, 0, 0.5)'
+    //                 ]
+    //             }]
+    //         },
+    //         revenue: {
+    //             labels: months,
+    //             datasets: [{
+    //                 label: 'Sample Revenue ($)',
+    //                 data: [125, 150, 175, 200, 220, 250],
+    //                 backgroundColor: 'rgba(0, 184, 169, 0.8)',
+    //                 borderColor: 'rgba(0, 184, 169, 1)',
+    //                 borderWidth: 1
+    //             }]
+    //         },
+    //         reading_times: {
+    //             labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    //             datasets: [
+    //                 {
+    //                     label: 'Weekday Borrows',
+    //                     data: [12, 15, 18, 14, 16, 0, 0],
+    //                     backgroundColor: 'rgba(103, 58, 183, 0.8)',
+    //                     borderColor: 'rgba(103, 58, 183, 1)'
+    //                 },
+    //                 {
+    //                     label: 'Weekend Borrows',
+    //                     data: [0, 0, 0, 0, 0, 25, 30],
+    //                     backgroundColor: 'rgba(186, 104, 200, 0.8)',
+    //                     borderColor: 'rgba(186, 104, 200, 1)'
+    //                 }
+    //             ]
+    //         }
+    //     };
+    // }
     
     // New method to fetch data from the API endpoint
     fetchDataFromServer() {

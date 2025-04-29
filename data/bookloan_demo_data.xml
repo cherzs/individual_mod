@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Book Loans Demo Data -->
+        <!-- Active/Current loans -->
+        <record id="loan_001" model="custom.book.loan">
+            <field name="name">LOAN/2023/001</field>
+            <field name="book_id" ref="book_1984"/>
+            <field name="member_id" ref="partner_john_doe"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-10)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="state">confirmed</field>
+            <field name="notes">First loan of the year</field>
+        </record>
+        
+        <record id="loan_002" model="custom.book.loan">
+            <field name="name">LOAN/2023/002</field>
+            <field name="book_id" ref="book_american_gods"/>
+            <field name="member_id" ref="partner_jane_smith"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-5)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="state">confirmed</field>
+        </record>
+        
+        <!-- Overdue loans -->
+        <record id="loan_003" model="custom.book.loan">
+            <field name="name">LOAN/2023/003</field>
+            <field name="book_id" ref="book_the_shining"/>
+            <field name="member_id" ref="partner_bob_johnson"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-20)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="state">overdue</field>
+            <field name="notes">Member has been notified about overdue</field>
+        </record>
+        
+        <!-- Returned loans -->
+        <record id="loan_004" model="custom.book.loan">
+            <field name="name">LOAN/2023/004</field>
+            <field name="book_id" ref="book_harry_potter_1"/>
+            <field name="member_id" ref="partner_emma_brown"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-30)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-20)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+        </record>
+        
+        <record id="loan_005" model="custom.book.loan">
+            <field name="name">LOAN/2023/005</field>
+            <field name="book_id" ref="book_harry_potter_2"/>
+            <field name="member_id" ref="partner_emma_brown"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-20)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-10)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+        </record>
+        
+        <record id="loan_006" model="custom.book.loan">
+            <field name="name">LOAN/2023/006</field>
+            <field name="book_id" ref="book_murder_on_orient"/>
+            <field name="member_id" ref="partner_michael_davis"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-25)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-5)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+            <field name="fine_amount">8.25</field>
+            <field name="notes">Returned late, fine applied</field>
+        </record>
+        
+        <!-- Late returned loans with fines -->
+        <record id="loan_007" model="custom.book.loan">
+            <field name="name">LOAN/2023/007</field>
+            <field name="book_id" ref="book_pride_and_prejudice"/>
+            <field name="member_id" ref="partner_sarah_wilson"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-40)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-15)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+            <field name="fine_amount">16.50</field>
+            <field name="notes">Significant delay, fine applied</field>
+        </record>
+        
+        <!-- Lost book -->
+        <record id="loan_008" model="custom.book.loan">
+            <field name="name">LOAN/2023/008</field>
+            <field name="book_id" ref="book_it"/>
+            <field name="member_id" ref="partner_james_taylor"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-60)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="state">lost</field>
+            <field name="notes">Member reported book lost, replacement fee applied</field>
+        </record>
+        
+        <!-- Historical loans -->
+        <record id="loan_009" model="custom.book.loan">
+            <field name="name">LOAN/2023/009</field>
+            <field name="book_id" ref="book_lord_of_rings"/>
+            <field name="member_id" ref="partner_jane_smith"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-90)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">21</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-72)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+            <field name="notes">Extended loan period for this large book</field>
+        </record>
+        
+        <record id="loan_010" model="custom.book.loan">
+            <field name="name">LOAN/2023/010</field>
+            <field name="book_id" ref="book_100_years_solitude"/>
+            <field name="member_id" ref="partner_olivia_anderson"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-45)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-30)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+        </record>
+        
+        <record id="loan_011" model="custom.book.loan">
+            <field name="name">LOAN/2023/011</field>
+            <field name="book_id" ref="book_beloved"/>
+            <field name="member_id" ref="partner_emma_brown"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-15)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="state">confirmed</field>
+        </record>
+        
+        <record id="loan_012" model="custom.book.loan">
+            <field name="name">LOAN/2023/012</field>
+            <field name="book_id" ref="book_norwegian_wood"/>
+            <field name="member_id" ref="partner_john_doe"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-95)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-78)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+            <field name="fine_amount">4.50</field>
+        </record>
+        
+        <!-- Multiple loans for the same member to show activity -->
+        <record id="loan_013" model="custom.book.loan">
+            <field name="name">LOAN/2023/013</field>
+            <field name="book_id" ref="book_the_shining"/>
+            <field name="member_id" ref="partner_jane_smith"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-120)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-110)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+        </record>
+        
+        <record id="loan_014" model="custom.book.loan">
+            <field name="name">LOAN/2023/014</field>
+            <field name="book_id" ref="book_murder_on_orient"/>
+            <field name="member_id" ref="partner_jane_smith"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-110)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-98)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+        </record>
+        
+        <record id="loan_015" model="custom.book.loan">
+            <field name="name">LOAN/2023/015</field>
+            <field name="book_id" ref="book_1984"/>
+            <field name="member_id" ref="partner_jane_smith"/>
+            <field name="loan_date" eval="(datetime.now() + relativedelta(days=-55)).strftime('%Y-%m-%d')"/>
+            <field name="loan_duration">14</field>
+            <field name="actual_return_date" eval="(datetime.now() + relativedelta(days=-42)).strftime('%Y-%m-%d')"/>
+            <field name="state">returned</field>
+        </record>
+    </data>
+</odoo> 

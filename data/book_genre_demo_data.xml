@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Book Genres Demo Data -->
+        <record id="genre_fiction" model="custom.book.genre">
+            <field name="name">Fiction</field>
+            <field name="code">FIC</field>
+            <field name="description">Literary works whose content is produced by the imagination and is not necessarily based on fact.</field>
+            <field name="color">1</field>
+            <field name="sequence">10</field>
+        </record>
+        
+        <record id="genre_mystery" model="custom.book.genre">
+            <field name="name">Mystery</field>
+            <field name="code">MYS</field>
+            <field name="description">A genre of fiction usually involving a mysterious death or a crime to be solved.</field>
+            <field name="color">2</field>
+            <field name="sequence">20</field>
+        </record>
+        
+        <record id="genre_scifi" model="custom.book.genre">
+            <field name="name">Science Fiction</field>
+            <field name="code">SCI</field>
+            <field name="description">Fiction based on imagined future scientific or technological advances.</field>
+            <field name="color">3</field>
+            <field name="sequence">30</field>
+        </record>
+        
+        <record id="genre_fantasy" model="custom.book.genre">
+            <field name="name">Fantasy</field>
+            <field name="code">FAN</field>
+            <field name="description">Fiction featuring elements of magic or the supernatural.</field>
+            <field name="color">4</field>
+            <field name="sequence">40</field>
+        </record>
+        
+        <record id="genre_biography" model="custom.book.genre">
+            <field name="name">Biography</field>
+            <field name="code">BIO</field>
+            <field name="description">An account of someone's life written by someone else.</field>
+            <field name="color">5</field>
+            <field name="sequence">50</field>
+        </record>
+        
+        <record id="genre_romance" model="custom.book.genre">
+            <field name="name">Romance</field>
+            <field name="code">ROM</field>
+            <field name="description">Novels that focus on the relationship and romantic love between two people.</field>
+            <field name="color">6</field>
+            <field name="sequence">60</field>
+        </record>
+        
+        <record id="genre_thriller" model="custom.book.genre">
+            <field name="name">Thriller</field>
+            <field name="code">THR</field>
+            <field name="description">Fiction characterized by suspense, excitement, and high stakes conflicts.</field>
+            <field name="color">7</field>
+            <field name="sequence">70</field>
+        </record>
+        
+        <record id="genre_horror" model="custom.book.genre">
+            <field name="name">Horror</field>
+            <field name="code">HOR</field>
+            <field name="description">Fiction meant to frighten, scare or disgust.</field>
+            <field name="color">8</field>
+            <field name="sequence">80</field>
+        </record>
+        
+        <record id="genre_history" model="custom.book.genre">
+            <field name="name">History</field>
+            <field name="code">HIS</field>
+            <field name="description">Non-fiction about past events, often structured as a narrative.</field>
+            <field name="color">9</field>
+            <field name="sequence">90</field>
+        </record>
+        
+        <record id="genre_selfhelp" model="custom.book.genre">
+            <field name="name">Self Help</field>
+            <field name="code">SELF</field>
+            <field name="description">Books aimed at helping readers solve personal problems or improve themselves.</field>
+            <field name="color">10</field>
+            <field name="sequence">100</field>
+        </record>
+        
+        <record id="genre_poetry" model="custom.book.genre">
+            <field name="name">Poetry</field>
+            <field name="code">POE</field>
+            <field name="description">Literary work in which the expression of feelings and ideas is given intensity by the use of distinctive style and rhythm.</field>
+            <field name="color">11</field>
+            <field name="sequence">110</field>
+        </record>
+        
+        <record id="genre_philosophy" model="custom.book.genre">
+            <field name="name">Philosophy</field>
+            <field name="code">PHIL</field>
+            <field name="description">Works studying the fundamental nature of knowledge, reality, and existence.</field>
+            <field name="color">12</field>
+            <field name="sequence">120</field>
+        </record>
+    </data>
+</odoo> 

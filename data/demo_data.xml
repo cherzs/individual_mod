@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Load demo data in the correct dependency order -->
+    <data>
+        <!-- This file is used to ensure data is loaded in the correct order -->
+        <!-- The actual data files are included in the demo section of __manifest__.py -->
+        
+        <!-- Note: We use a simpler approach than trying to use _load_records or _load functions -->
+        <!-- The module system will load files in the order listed in the manifest -->
+        
+        <!-- Just add a simple record to ensure this file gets loaded -->
+        <record id="demo_data_loaded" model="ir.config_parameter">
+            <field name="key">individual_mod.demo_data_loaded</field>
+            <field name="value">True</field>
+        </record>
+    </data>
+</odoo> 
