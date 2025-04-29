@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Create initial dashboard record -->
+        <record id="default_library_dashboard" model="custom.library.dashboard">
+            <field name="name">Library Dashboard</field>
+        </record>
+    </data>
+</odoo> 

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_library_dashboard_form" model="ir.ui.view">
+            <field name="name">custom.library.dashboard.form</field>
+            <field name="model">custom.library.dashboard</field>
+            <field name="arch" type="xml">
+                <form create="false" edit="false" delete="false" options="{'action_buttons': false}">
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>Library Dashboard</h1>
+                        </div>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_view_books" type="object" class="oe_stat_button" icon="fa-book">
+                                <field name="book_count" widget="statinfo" string="Books"/>
+                            </button>
+                            <button name="action_view_loans" type="object" class="oe_stat_button" icon="fa-calendar">
+                                <field name="loan_count" widget="statinfo" string="Loans"/>
+                            </button>
+                            <button name="action_view_overdue" type="object" class="oe_stat_button" icon="fa-clock-o">
+                                <field name="overdue_count" widget="statinfo" string="Overdue"/>
+                            </button>
+                            <button name="action_view_members" type="object" class="oe_stat_button" icon="fa-users">
+                                <field name="member_count" widget="statinfo" string="Members"/>
+                            </button>
+                        </div>
+                        <notebook>
+                            <page string="Performance">
+                                <group>
+                                    <group>
+                                        <field name="total_revenue_mtd"/>
+                                        <field name="total_revenue_ytd"/>
+                                        <field name="average_loan_duration"/>
+                                    </group>
+                                    <group>
+                                        <field name="most_borrowed_genre_id"/>
+                                        <field name="most_active_member_id"/>
+                                        <field name="revenue_growth"/>
+                                    </group>
+                                </group>
+                                <div class="oe_chart">
+                                    <field name="graph_data" widget="text" invisible="1" class="o_chart_data"/>
+                                    <div class="o_dashboard_charts"/>
+                                </div>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <record id="action_library_dashboard" model="ir.actions.act_window">
+            <field name="name">Library Dashboard</field>
+            <field name="res_model">custom.library.dashboard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_library_dashboard_form"/>
+            <field name="target">current</field>
+            <field name="domain">[]</field>
+            <field name="context">{'form_view_initial_mode': 'readonly', 'create': false}</field>
+            <field name="limit">1</field>
+        </record>
+    </data>
+</odoo>
